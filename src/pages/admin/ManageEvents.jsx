@@ -14,10 +14,11 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
 import { Card, Button, Spinner, EmptyState, Badge, Dropdown } from '../../components/common';
-import { getAllEvents, deleteEvent, archiveEvent } from '../../services/event.service';
+import { getAllEvents, deleteEvent, archiveEvent, getEventById, getEventParticipants } from '../../services/event.service';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import { ADMIN_ROUTES, getEditEventRoute, getEventParticipantsRoute } from '../../config/routes';
-import { APP_NAME, EVENT_STATUS } from '../../config/constants';
+import { APP_NAME, EVENT_STATUS, PARTICIPANT_STATUS } from '../../config/constants';
+import { exportToExcel, formatParticipantsForExport } from '../../utils/exportUtils';
 
 export default function ManageEvents() {
   const navigate = useNavigate();
@@ -75,6 +76,17 @@ export default function ManageEvents() {
 
     setProcessingId(eventId);
     try {
+      // Fetch event + approved participants before archiving
+      const event = await getEventById(eventId);
+      const participants = await getEventParticipants(eventId, PARTICIPANT_STATUS.APPROVED);
+
+      // Auto-download Excel export
+      if (participants.length > 0) {
+        const formatted = formatParticipantsForExport(participants);
+        const safeTitle = event.title.replace(/[^a-zA-Z0-9]/g, '_');
+        exportToExcel(formatted, `${safeTitle}_participants`, 'Participants');
+      }
+
       await archiveEvent(eventId, userProfile.uid);
       toast.success('Event archived successfully');
       setEvents((prev) => prev.filter((e) => e.id !== eventId));

@@ -288,6 +288,29 @@ export const archiveEvent = async (eventId, adminUid) => {
 };
 
 /**
+ * Get all archived events
+ */
+export const getArchivedEvents = async () => {
+  const q = query(
+    collection(db, COLLECTIONS.ARCHIVED_EVENTS),
+    orderBy('archivedAt', 'desc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+};
+
+/**
+ * Get a single archived event by ID
+ */
+export const getArchivedEventById = async (archivedEventId) => {
+  const docSnap = await getDoc(doc(db, COLLECTIONS.ARCHIVED_EVENTS, archivedEventId));
+  if (docSnap.exists()) {
+    return { id: archivedEventId, ...docSnap.data() };
+  }
+  return null;
+};
+
+/**
  * Get event statistics
  */
 export const getEventStats = async () => {

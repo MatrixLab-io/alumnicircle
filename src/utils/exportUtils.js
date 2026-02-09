@@ -96,6 +96,20 @@ export const formatArchivedEventForExport = (event, participants) => {
 };
 
 /**
+ * Format archived event participants for export (slimmer data shape from archive)
+ */
+export const formatArchivedParticipantsForExport = (participants) => {
+  return participants.map((p, index) => ({
+    'S.No': index + 1,
+    'Name': p.userName,
+    'Email': p.userEmail,
+    'Phone': p.userPhone,
+    'Payment Verified': p.paymentVerified ? 'Yes' : 'No',
+    'Transaction ID': p.bkashTransactionId || '-',
+  }));
+};
+
+/**
  * Parse CSV file
  */
 export const parseCSV = (file) => {

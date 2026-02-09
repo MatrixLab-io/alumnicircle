@@ -30,6 +30,7 @@ export const ADMIN_ROUTES = {
   EDIT_EVENT: '/admin/events/:id/edit',
   MANAGE_EVENTS: '/admin/events',
   EVENT_PARTICIPANTS: '/admin/events/:id/participants',
+  ARCHIVED_EVENTS: '/admin/events/archived',
   MANAGE_ADMINS: '/admin/manage-admins',
 };
 

@@ -8,12 +8,11 @@ export const isValidEmail = (email) => {
 
 /**
  * Phone validation (Bangladesh format)
+ * Valid operators: 013, 014, 015, 016, 017, 018, 019
  */
 export const isValidPhone = (phone) => {
-  // Remove all non-numeric characters
   const cleaned = phone.replace(/\D/g, '');
-  // Bangladesh phone numbers: 11 digits starting with 01
-  return cleaned.length === 11 && cleaned.startsWith('01');
+  return /^01[3-9]\d{8}$/.test(cleaned);
 };
 
 /**
@@ -97,6 +96,25 @@ export const isValidName = (name) => {
 };
 
 /**
+ * Date validation - must not be in the past
+ */
+export const isNotPastDate = (dateStr) => {
+  if (!dateStr) return true;
+  const selected = new Date(dateStr);
+  const now = new Date();
+  now.setSeconds(0, 0);
+  return selected >= now;
+};
+
+/**
+ * Date validation - end date must be after start date
+ */
+export const isAfterDate = (endStr, startStr) => {
+  if (!endStr || !startStr) return true;
+  return new Date(endStr) > new Date(startStr);
+};
+
+/**
  * Form validation rules for React Hook Form
  */
 export const validationRules = {
@@ -148,5 +166,20 @@ export const validationRules = {
   },
   url: {
     validate: (value) => !value || isValidUrl(value) || 'Please enter a valid URL',
+  },
+  startDate: {
+    required: 'Start date is required',
+    validate: (value) => isNotPastDate(value) || 'Start date cannot be in the past',
+  },
+  endDate: (getStartDate) => ({
+    validate: (value) => {
+      if (!value) return true;
+      if (!isNotPastDate(value)) return 'End date cannot be in the past';
+      if (!isAfterDate(value, getStartDate())) return 'End date must be after start date';
+      return true;
+    },
+  }),
+  contactPhone: {
+    validate: (value) => !value || isValidPhone(value) || 'Please enter a valid Bangladesh phone number (01[3-9]XXXXXXXX)',
   },
 };

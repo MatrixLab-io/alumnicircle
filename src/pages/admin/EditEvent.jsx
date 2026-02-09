@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
 import { Card, Button, Input, Textarea, Select, Toggle, Spinner } from '../../components/common';
 import { getEventById, updateEvent, uploadEventBanner } from '../../services/event.service';
+import { validationRules, isValidPhone } from '../../utils/validators';
 import { ADMIN_ROUTES } from '../../config/routes';
 import { APP_NAME, EVENT_STATUS } from '../../config/constants';
 
@@ -30,6 +31,7 @@ export default function EditEvent() {
   const [isPublic, setIsPublic] = useState(true);
   const [isPaid, setIsPaid] = useState(false);
   const [contactPersons, setContactPersons] = useState([{ name: '', phone: '' }]);
+  const [contactErrors, setContactErrors] = useState([]);
   const [eventStatus, setEventStatus] = useState(EVENT_STATUS.UPCOMING);
   const fileInputRef = useRef(null);
 
@@ -37,6 +39,7 @@ export default function EditEvent() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm();
 
@@ -104,7 +107,19 @@ export default function EditEvent() {
     }
   };
 
+  const validateContactPersons = () => {
+    const errs = contactPersons.map((cp) => {
+      if (cp.phone && !isValidPhone(cp.phone)) return 'Invalid BD phone number';
+      if (cp.name && !cp.phone) return 'Phone is required';
+      if (cp.phone && !cp.name) return 'Name is required';
+      return '';
+    });
+    setContactErrors(errs);
+    return errs.every((e) => !e);
+  };
+
   const onSubmit = async (data) => {
+    if (!validateContactPersons()) return;
     setIsSubmitting(true);
     try {
       const eventData = {
@@ -246,12 +261,13 @@ export default function EditEvent() {
               type="datetime-local"
               error={errors.startDate?.message}
               required
-              {...register('startDate', { required: 'Start date is required' })}
+              {...register('startDate', validationRules.startDate)}
             />
             <Input
               label="End Date & Time"
               type="datetime-local"
-              {...register('endDate')}
+              error={errors.endDate?.message}
+              {...register('endDate', validationRules.endDate(() => watch('startDate')))}
             />
           </div>
         </Card>
@@ -315,11 +331,13 @@ export default function EditEvent() {
                 />
                 <Input
                   label="bKash Number"
+                  type="tel"
                   placeholder="01XXXXXXXXX"
                   error={errors.bkashNumber?.message}
                   required
                   {...register('bkashNumber', {
                     required: isPaid ? 'bKash number is required' : false,
+                    validate: (value) => !isPaid || !value || isValidPhone(value) || 'Enter a valid BD phone number (01[3-9]XXXXXXXX)',
                   })}
                 />
               </div>
@@ -350,33 +368,38 @@ export default function EditEvent() {
           </div>
           <div className="space-y-3">
             {contactPersons.map((cp, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    value={cp.name}
-                    onChange={(e) => updateContactPerson(index, 'name', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
+              <div key={index}>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={cp.name}
+                      onChange={(e) => updateContactPerson(index, 'name', e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border ${contactErrors[index] ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent`}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="tel"
+                      placeholder="Phone (01XXXXXXXXX)"
+                      value={cp.phone}
+                      onChange={(e) => updateContactPerson(index, 'phone', e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border ${contactErrors[index] ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent`}
+                    />
+                  </div>
+                  {contactPersons.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeContactPerson(index)}
+                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
-                <div className="flex-1">
-                  <input
-                    type="tel"
-                    placeholder="Phone (01XXXXXXXXX)"
-                    value={cp.phone}
-                    onChange={(e) => updateContactPerson(index, 'phone', e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
-                {contactPersons.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeContactPerson(index)}
-                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
+                {contactErrors[index] && (
+                  <p className="mt-1 text-xs text-red-500">{contactErrors[index]}</p>
                 )}
               </div>
             ))}

@@ -6,6 +6,7 @@ import {
   UserPlusIcon,
   ShieldCheckIcon,
   PlusCircleIcon,
+  ArchiveBoxIcon,
 } from '@heroicons/react/24/outline';
 import Navbar from './Navbar';
 import Container from './Container';
@@ -18,6 +19,7 @@ const sidebarNavigation = [
   { name: 'User Approvals', href: ADMIN_ROUTES.USER_APPROVALS, icon: UserPlusIcon },
   { name: 'All Users', href: ADMIN_ROUTES.ALL_USERS, icon: UsersIcon },
   { name: 'Manage Events', href: ADMIN_ROUTES.MANAGE_EVENTS, icon: CalendarIcon },
+  { name: 'Archived Events', href: ADMIN_ROUTES.ARCHIVED_EVENTS, icon: ArchiveBoxIcon },
   { name: 'Create Event', href: ADMIN_ROUTES.CREATE_EVENT, icon: PlusCircleIcon },
 ];
 
