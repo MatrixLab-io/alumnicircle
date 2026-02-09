@@ -101,7 +101,23 @@ export const formatAddress = (address) => {
   const parts = [];
   if (address.street) parts.push(address.street);
   if (address.city) parts.push(address.city);
+  if (address.postCode) parts.push(address.postCode);
   if (address.country) parts.push(address.country);
+  return parts.join(', ');
+};
+
+/**
+ * Format event location for display.
+ * Supports both legacy string and new structured object.
+ */
+export const formatEventLocation = (location) => {
+  if (!location) return '';
+  if (typeof location === 'string') return location;
+  const parts = [];
+  if (location.street) parts.push(location.street);
+  if (location.city) parts.push(location.city);
+  if (location.postCode) parts.push(location.postCode);
+  if (location.country) parts.push(location.country);
   return parts.join(', ');
 };
 

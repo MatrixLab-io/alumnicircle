@@ -32,6 +32,12 @@ export const PARTICIPANT_STATUS = {
   REJECTED: 'rejected',
 };
 
+// Payment Methods
+export const PAYMENT_METHODS = {
+  BKASH: 'bkash',
+  CASH: 'cash',
+};
+
 // Visibility Options
 export const VISIBILITY = {
   PUBLIC: 'public',

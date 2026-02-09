@@ -14,7 +14,8 @@ import { PageHeader } from '../../components/layout';
 import { Card, Button, Badge, Spinner, Avatar } from '../../components/common';
 import { getUserStats } from '../../services/user.service';
 import { getAllEvents, getUserEvents } from '../../services/event.service';
-import { formatDate } from '../../utils/helpers';
+import { formatDate, getEventLiveStatus } from '../../utils/helpers';
+import { formatEventLocation } from '../../utils/formatters';
 import { USER_ROUTES, getEventDetailsRoute } from '../../config/routes';
 import { APP_NAME } from '../../config/constants';
 
@@ -34,7 +35,8 @@ export default function Dashboard() {
         userProfile?.uid ? getUserEvents(userProfile.uid) : [],
       ]);
       setStats(userStats);
-      setUpcomingEvents(events.slice(0, 3));
+      const activeEvents = events.filter((e) => getEventLiveStatus(e).status !== 'ended');
+      setUpcomingEvents(activeEvents.slice(0, 3));
       setRegisteredEventIds(new Set(myEvents.map((e) => e.eventId)));
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -247,7 +249,7 @@ export default function Dashboard() {
                       {event.title}
                     </h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(event.startDate)} - {event.location}
+                      {formatDate(event.startDate)} - {formatEventLocation(event.location)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">

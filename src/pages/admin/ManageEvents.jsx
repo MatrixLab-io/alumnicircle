@@ -15,7 +15,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
 import { Card, Button, Spinner, EmptyState, Badge, Dropdown } from '../../components/common';
 import { getAllEvents, deleteEvent, archiveEvent, getEventById, getEventParticipants } from '../../services/event.service';
-import { formatDate, formatCurrency } from '../../utils/helpers';
+import { formatDate, formatCurrency, getEventLiveStatus } from '../../utils/helpers';
+import { formatEventLocation } from '../../utils/formatters';
+import EventCountdown from '../../components/events/EventCountdown';
 import { ADMIN_ROUTES, getEditEventRoute, getEventParticipantsRoute } from '../../config/routes';
 import { APP_NAME, EVENT_STATUS, PARTICIPANT_STATUS } from '../../config/constants';
 import { exportToExcel, formatParticipantsForExport } from '../../utils/exportUtils';
@@ -97,15 +99,9 @@ export default function ManageEvents() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const variants = {
-      [EVENT_STATUS.UPCOMING]: 'blue',
-      [EVENT_STATUS.ONGOING]: 'green',
-      [EVENT_STATUS.COMPLETED]: 'gray',
-      [EVENT_STATUS.CANCELLED]: 'red',
-      [EVENT_STATUS.DRAFT]: 'yellow',
-    };
-    return <Badge variant={variants[status] || 'gray'}>{status}</Badge>;
+  const renderStatusBadge = (event) => {
+    const ls = getEventLiveStatus(event);
+    return <Badge variant={ls.variant} dot={ls.dot}>{ls.label}</Badge>;
   };
 
   return (
@@ -171,14 +167,14 @@ export default function ManageEvents() {
                       <h3 className="font-semibold text-gray-900 dark:text-white">
                         {event.title}
                       </h3>
-                      {getStatusBadge(event.status)}
+                      {renderStatusBadge(event)}
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1 mb-2">
                       {event.description}
                     </p>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
                       <span>{formatDate(event.startDate)}</span>
-                      <span>{event.location}</span>
+                      <span>{formatEventLocation(event.location)}</span>
                       <span>
                         {event.currentParticipants || 0}
                         {event.participantLimit && ` / ${event.participantLimit}`} participants
@@ -188,6 +184,9 @@ export default function ManageEvents() {
                           ? formatCurrency(event.registrationFee)
                           : 'Free'}
                       </span>
+                      {getEventLiveStatus(event).status === 'upcoming' && (
+                        <EventCountdown startDate={event.startDate} compact />
+                      )}
                     </div>
                   </div>
                 </div>

@@ -10,6 +10,7 @@ import { PageHeader } from '../../components/layout';
 import { Card, Spinner, EmptyState, Badge } from '../../components/common';
 import { getArchivedEvents } from '../../services/event.service';
 import { formatDate, formatCurrency } from '../../utils/helpers';
+import { formatEventLocation } from '../../utils/formatters';
 import { exportToExcel, formatArchivedParticipantsForExport } from '../../utils/exportUtils';
 import { generateEventPDF } from '../../utils/pdfUtils';
 import { APP_NAME } from '../../config/constants';
@@ -90,7 +91,7 @@ export default function ArchivedEvents() {
                   </div>
                   <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400 mt-2">
                     <span>{formatDate(item.eventData.startDate)}</span>
-                    <span>{item.eventData.location}</span>
+                    <span>{formatEventLocation(item.eventData.location)}</span>
                     <span>{item.totalParticipants} participants</span>
                     <span>
                       {item.totalRevenue > 0

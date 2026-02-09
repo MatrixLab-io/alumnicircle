@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatEventLocation } from './formatters';
 
 /**
  * Generate a PDF summary for an archived event
@@ -38,7 +39,7 @@ export const generateEventPDF = (archivedEvent) => {
   };
 
   const details = [
-    ['Location', eventData.location || '-'],
+    ['Location', formatEventLocation(eventData.location) || '-'],
     ['Start Date', formatTimestamp(eventData.startDate)],
     ['End Date', formatTimestamp(eventData.endDate)],
     ['Registration Fee', eventData.registrationFee > 0 ? `BDT ${eventData.registrationFee}` : 'Free'],

@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
+import { formatEventLocation } from './formatters';
 
 /**
  * Export data to CSV
@@ -85,7 +86,7 @@ export const formatArchivedEventForExport = (event, participants) => {
     eventInfo: {
       'Title': event.title,
       'Description': event.description,
-      'Location': event.location,
+      'Location': formatEventLocation(event.location),
       'Start Date': event.startDate?.toDate?.().toLocaleString() || '-',
       'End Date': event.endDate?.toDate?.().toLocaleString() || '-',
       'Registration Fee': event.registrationFee || 'Free',

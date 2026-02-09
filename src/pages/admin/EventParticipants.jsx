@@ -260,6 +260,11 @@ export default function EventParticipants() {
                           {participant.paymentVerified ? 'Paid' : 'Payment Pending'}
                         </Badge>
                       )}
+                      {participant.paymentRequired && (
+                        <Badge variant="gray">
+                          {participant.paymentMethod === 'cash' ? 'Cash' : 'bKash'}
+                        </Badge>
+                      )}
                     </div>
                     {participant.bkashTransactionId && (
                       <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">

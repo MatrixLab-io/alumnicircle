@@ -12,3 +12,4 @@ export { default as Spinner } from './Spinner';
 export { default as EmptyState } from './EmptyState';
 export { default as Dropdown } from './Dropdown';
 export { default as ErrorBoundary } from './ErrorBoundary';
+export { default as DateTimePicker } from './DateTimePicker';

@@ -1,4 +1,4 @@
-import { USER_ROLES, USER_STATUS } from '../config/constants';
+import { USER_ROLES, USER_STATUS, EVENT_STATUS } from '../config/constants';
 
 /**
  * Generate initials from a name
@@ -78,6 +78,35 @@ export const getRelativeTime = (timestamp) => {
   if (Math.abs(diffDays) < 30) return rtf.format(diffDays, 'day');
   if (Math.abs(diffDays) < 365) return rtf.format(Math.round(diffDays / 30), 'month');
   return rtf.format(Math.round(diffDays / 365), 'year');
+};
+
+/**
+ * Compute live event status based on dates.
+ * Returns { status, label, variant } for badge rendering.
+ * Respects cancelled/draft as-is; for upcoming/ongoing/completed
+ * it re-derives from startDate/endDate vs now.
+ */
+export const getEventLiveStatus = (event) => {
+  if (event.status === EVENT_STATUS.CANCELLED) {
+    return { status: 'cancelled', label: 'Cancelled', variant: 'red' };
+  }
+  if (event.status === EVENT_STATUS.DRAFT) {
+    return { status: 'draft', label: 'Draft', variant: 'yellow' };
+  }
+
+  const now = new Date();
+  const start = event.startDate?.toDate ? event.startDate.toDate() : new Date(event.startDate);
+  const end = event.endDate
+    ? (event.endDate.toDate ? event.endDate.toDate() : new Date(event.endDate))
+    : null;
+
+  if (end && now > end) {
+    return { status: 'ended', label: 'Ended', variant: 'gray' };
+  }
+  if (now >= start) {
+    return { status: 'ongoing', label: 'Running', variant: 'green', dot: true };
+  }
+  return { status: 'upcoming', label: 'Upcoming', variant: 'blue' };
 };
 
 /**

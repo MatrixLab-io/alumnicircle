@@ -7,6 +7,7 @@ import { Card, Button, Badge, Spinner } from '../../components/common';
 import { ThemeToggle } from '../../components/theme';
 import { getPublicEvents } from '../../services/event.service';
 import { formatDate, formatCurrency } from '../../utils/helpers';
+import { formatEventLocation } from '../../utils/formatters';
 import { PUBLIC_ROUTES, USER_ROUTES, ADMIN_ROUTES } from '../../config/routes';
 import { APP_NAME } from '../../config/constants';
 
@@ -198,7 +199,7 @@ export default function Landing() {
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPinIcon className="h-4 w-4" />
-                      {event.location}
+                      {formatEventLocation(event.location)}
                     </div>
                   </div>
                   <div className="flex items-center justify-between">

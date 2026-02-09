@@ -52,7 +52,8 @@ export default function EditProfile() {
       address: {
         street: userProfile?.address?.street || '',
         city: userProfile?.address?.city || '',
-        country: userProfile?.address?.country || '',
+        postCode: userProfile?.address?.postCode || '',
+        country: userProfile?.address?.country || 'Bangladesh',
       },
       socialLinks: {
         facebook: userProfile?.socialLinks?.facebook || '',
@@ -113,7 +114,8 @@ export default function EditProfile() {
         ? {
             street: data.address.street || null,
             city: data.address.city,
-            country: data.address.country || null,
+            postCode: data.address.postCode || null,
+            country: data.address.country || 'Bangladesh',
           }
         : null;
 
@@ -248,8 +250,13 @@ export default function EditProfile() {
                 {...register('address.city')}
               />
               <Input
+                label="Post Code"
+                placeholder="e.g. 1212"
+                {...register('address.postCode')}
+              />
+              <Input
                 label="Country"
-                placeholder="Enter country"
+                placeholder="Bangladesh"
                 {...register('address.country')}
               />
             </div>

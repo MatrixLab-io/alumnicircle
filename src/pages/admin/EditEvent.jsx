@@ -6,18 +6,16 @@ import { PhotoIcon, PlusIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
-import { Card, Button, Input, Textarea, Select, Toggle, Spinner } from '../../components/common';
+import { Card, Button, Input, Textarea, Select, Toggle, Spinner, DateTimePicker } from '../../components/common';
 import { getEventById, updateEvent, uploadEventBanner } from '../../services/event.service';
 import { validationRules, isValidPhone } from '../../utils/validators';
 import { ADMIN_ROUTES } from '../../config/routes';
-import { APP_NAME, EVENT_STATUS } from '../../config/constants';
+import { APP_NAME, EVENT_STATUS, PAYMENT_METHODS } from '../../config/constants';
 
-const formatDateForInput = (date) => {
-  if (!date) return '';
-  const d = date?.toDate ? date.toDate() : new Date(date);
-  if (isNaN(d.getTime())) return '';
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const toDate = (val) => {
+  if (!val) return null;
+  const d = val?.toDate ? val.toDate() : new Date(val);
+  return isNaN(d.getTime()) ? null : d;
 };
 
 export default function EditEvent() {
@@ -30,6 +28,10 @@ export default function EditEvent() {
   const [bannerFile, setBannerFile] = useState(null);
   const [isPublic, setIsPublic] = useState(true);
   const [isPaid, setIsPaid] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS.BKASH);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [dateErrors, setDateErrors] = useState({ startDate: '', endDate: '' });
   const [contactPersons, setContactPersons] = useState([{ name: '', phone: '' }]);
   const [contactErrors, setContactErrors] = useState([]);
   const [eventStatus, setEventStatus] = useState(EVENT_STATUS.UPCOMING);
@@ -57,20 +59,27 @@ export default function EditEvent() {
         return;
       }
 
-      // Pre-fill form
+      // Pre-fill form — support legacy string location and new object
+      const loc = event.location || {};
+      const isLegacyLocation = typeof loc === 'string';
       reset({
         title: event.title || '',
         description: event.description || '',
-        location: event.location || '',
-        startDate: formatDateForInput(event.startDate),
-        endDate: formatDateForInput(event.endDate),
+        locationStreet: isLegacyLocation ? loc : (loc.street || ''),
+        locationCity: isLegacyLocation ? '' : (loc.city || ''),
+        locationPostCode: isLegacyLocation ? '' : (loc.postCode || ''),
+        locationCountry: isLegacyLocation ? 'Bangladesh' : (loc.country || 'Bangladesh'),
         participantLimit: event.participantLimit || '',
         registrationFee: event.registrationFee || '',
         bkashNumber: event.bkashNumber || '',
       });
 
+      setStartDate(toDate(event.startDate));
+      setEndDate(toDate(event.endDate));
+
       setIsPublic(event.isPublic !== false);
       setIsPaid(event.registrationFee > 0);
+      setPaymentMethod(event.paymentMethod || PAYMENT_METHODS.BKASH);
       setEventStatus(event.status || EVENT_STATUS.UPCOMING);
       if (event.banner) setBannerPreview(event.banner);
       if (event.contactPersons?.length > 0) {
@@ -118,19 +127,38 @@ export default function EditEvent() {
     return errs.every((e) => !e);
   };
 
+  const validateDates = () => {
+    const errs = { startDate: '', endDate: '' };
+    if (!startDate) {
+      errs.startDate = 'Start date is required';
+    }
+    if (endDate && startDate && endDate <= startDate) {
+      errs.endDate = 'End date must be after start date';
+    }
+    setDateErrors(errs);
+    return !errs.startDate && !errs.endDate;
+  };
+
   const onSubmit = async (data) => {
+    if (!validateDates()) return;
     if (!validateContactPersons()) return;
     setIsSubmitting(true);
     try {
       const eventData = {
         title: data.title,
         description: data.description,
-        location: data.location,
-        startDate: new Date(data.startDate),
-        endDate: data.endDate ? new Date(data.endDate) : null,
+        location: {
+          street: data.locationStreet || '',
+          city: data.locationCity,
+          postCode: data.locationPostCode || '',
+          country: data.locationCountry || 'Bangladesh',
+        },
+        startDate,
+        endDate: endDate || null,
         participantLimit: data.participantLimit ? parseInt(data.participantLimit) : null,
         registrationFee: isPaid ? parseFloat(data.registrationFee) : 0,
-        bkashNumber: isPaid ? data.bkashNumber : null,
+        paymentMethod: isPaid ? paymentMethod : null,
+        bkashNumber: isPaid && paymentMethod === PAYMENT_METHODS.BKASH ? data.bkashNumber : null,
         isPublic,
         status: eventStatus,
         contactPersons: contactPersons.filter((cp) => cp.name && cp.phone),
@@ -241,12 +269,31 @@ export default function EditEvent() {
             />
 
             <Input
-              label="Location"
-              placeholder="Event venue or address"
-              error={errors.location?.message}
+              label="Street Address / Venue"
+              placeholder="e.g. Convention Center, Road 5, Gulshan"
+              error={errors.locationStreet?.message}
               required
-              {...register('location', { required: 'Location is required' })}
+              {...register('locationStreet', { required: 'Street address is required' })}
             />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Input
+                label="City"
+                placeholder="e.g. Dhaka"
+                error={errors.locationCity?.message}
+                required
+                {...register('locationCity', { required: 'City is required' })}
+              />
+              <Input
+                label="Post Code"
+                placeholder="e.g. 1212"
+                {...register('locationPostCode')}
+              />
+              <Input
+                label="Country"
+                placeholder="Bangladesh"
+                {...register('locationCountry')}
+              />
+            </div>
           </div>
         </Card>
 
@@ -256,18 +303,19 @@ export default function EditEvent() {
             Date & Time
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
+            <DateTimePicker
               label="Start Date & Time"
-              type="datetime-local"
-              error={errors.startDate?.message}
+              value={startDate}
+              onChange={setStartDate}
+              error={dateErrors.startDate}
               required
-              {...register('startDate', validationRules.startDate)}
             />
-            <Input
+            <DateTimePicker
               label="End Date & Time"
-              type="datetime-local"
-              error={errors.endDate?.message}
-              {...register('endDate', validationRules.endDate(() => watch('startDate')))}
+              value={endDate}
+              onChange={setEndDate}
+              error={dateErrors.endDate}
+              minDate={startDate}
             />
           </div>
         </Card>
@@ -317,7 +365,7 @@ export default function EditEvent() {
             />
 
             {isPaid && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="space-y-4 pt-2">
                 <Input
                   label="Registration Fee (BDT)"
                   type="number"
@@ -329,17 +377,53 @@ export default function EditEvent() {
                     required: isPaid ? 'Fee is required for paid events' : false,
                   })}
                 />
-                <Input
-                  label="bKash Number"
-                  type="tel"
-                  placeholder="01XXXXXXXXX"
-                  error={errors.bkashNumber?.message}
-                  required
-                  {...register('bkashNumber', {
-                    required: isPaid ? 'bKash number is required' : false,
-                    validate: (value) => !isPaid || !value || isValidPhone(value) || 'Enter a valid BD phone number (01[3-9]XXXXXXXX)',
-                  })}
-                />
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Payment Method
+                  </label>
+                  <div className="flex gap-2">
+                    {[
+                      { value: PAYMENT_METHODS.BKASH, label: 'bKash' },
+                      { value: PAYMENT_METHODS.CASH, label: 'By Cash' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setPaymentMethod(opt.value)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                          paymentMethod === opt.value
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-white/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {paymentMethod === PAYMENT_METHODS.BKASH && (
+                  <Input
+                    label="bKash Number"
+                    type="tel"
+                    placeholder="01XXXXXXXXX"
+                    error={errors.bkashNumber?.message}
+                    required
+                    {...register('bkashNumber', {
+                      required: isPaid && paymentMethod === PAYMENT_METHODS.BKASH ? 'bKash number is required' : false,
+                      validate: (value) => !isPaid || paymentMethod !== PAYMENT_METHODS.BKASH || !value || isValidPhone(value) || 'Enter a valid BD phone number (01[3-9]XXXXXXXX)',
+                    })}
+                  />
+                )}
+
+                {paymentMethod === PAYMENT_METHODS.CASH && (
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      Participants will pay in cash at the event venue. Admin approval will still be required.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

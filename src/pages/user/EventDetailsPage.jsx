@@ -8,8 +8,9 @@ import { PageHeader } from '../../components/layout';
 import { Button, Spinner, Card, Badge } from '../../components/common';
 import { EventDetails, JoinEventModal } from '../../components/events';
 import { getEventById, joinEvent, getEventParticipants } from '../../services/event.service';
+import { getEventLiveStatus } from '../../utils/helpers';
 import { USER_ROUTES } from '../../config/routes';
-import { APP_NAME, PARTICIPANT_STATUS } from '../../config/constants';
+import { APP_NAME, PARTICIPANT_STATUS, PAYMENT_METHODS } from '../../config/constants';
 
 export default function EventDetailsPage() {
   const { id } = useParams();
@@ -130,10 +131,11 @@ export default function EventDetailsPage() {
     return null;
   }
 
+  const liveStatus = getEventLiveStatus(event);
   const canJoin =
     !userParticipation &&
-    event.status !== 'completed' &&
-    event.status !== 'cancelled' &&
+    liveStatus.status !== 'ended' &&
+    liveStatus.status !== 'cancelled' &&
     (!event.participantLimit || event.currentParticipants < event.participantLimit);
 
   return (
@@ -166,7 +168,11 @@ export default function EventDetailsPage() {
         {canJoin && (
           <div className="flex justify-center">
             <Button size="lg" onClick={() => setShowJoinModal(true)}>
-              {event.registrationFee > 0 ? 'Register (Paid)' : 'Register for Free'}
+              {event.registrationFee > 0
+                ? event.paymentMethod === PAYMENT_METHODS.CASH
+                  ? 'Register (Cash)'
+                  : 'Register (Paid)'
+                : 'Register for Free'}
             </Button>
           </div>
         )}

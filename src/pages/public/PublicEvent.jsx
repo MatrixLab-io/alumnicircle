@@ -10,9 +10,11 @@ import {
   ArrowLeftIcon,
 } from '@heroicons/react/24/outline';
 import { getEventById } from '../../services/event.service';
-import { formatDateTime, formatCurrency } from '../../utils/helpers';
+import { formatDateTime, formatCurrency, getEventLiveStatus } from '../../utils/helpers';
+import { formatEventLocation } from '../../utils/formatters';
 import { APP_NAME } from '../../config/constants';
 import { PUBLIC_ROUTES } from '../../config/routes';
+import EventCountdown from '../../components/events/EventCountdown';
 
 export default function PublicEvent() {
   const { id } = useParams();
@@ -82,6 +84,7 @@ export default function PublicEvent() {
   const spotsLeft = event.participantLimit
     ? event.participantLimit - (event.currentParticipants || 0)
     : null;
+  const liveStatus = getEventLiveStatus(event);
 
   return (
     <>
@@ -132,13 +135,17 @@ export default function PublicEvent() {
                 </h1>
                 <div className="flex flex-wrap gap-2">
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                    event.status === 'ongoing'
+                    liveStatus.variant === 'green'
                       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                      : event.status === 'completed'
+                      : liveStatus.variant === 'gray'
                       ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                      : liveStatus.variant === 'red'
+                      ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                      : liveStatus.variant === 'yellow'
+                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                       : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
                   }`}>
-                    {event.status === 'ongoing' ? 'Happening Now' : event.status === 'completed' ? 'Completed' : 'Upcoming'}
+                    {liveStatus.label}
                   </span>
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                     isFree
@@ -153,6 +160,12 @@ export default function PublicEvent() {
                     </span>
                   )}
                 </div>
+                {liveStatus.status === 'upcoming' && (
+                  <div className="mt-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Starts in</p>
+                    <EventCountdown startDate={event.startDate} />
+                  </div>
+                )}
               </div>
 
               {/* Details Grid */}
@@ -177,7 +190,7 @@ export default function PublicEvent() {
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
                     <p className="font-medium text-gray-900 dark:text-white">
-                      {event.location}
+                      {formatEventLocation(event.location)}
                     </p>
                   </div>
                 </div>
@@ -205,9 +218,9 @@ export default function PublicEvent() {
                     <p className="font-medium text-gray-900 dark:text-white">
                       {isFree ? 'Free' : formatCurrency(event.registrationFee)}
                     </p>
-                    {!isFree && event.bkashNumber && (
+                    {!isFree && (
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        bKash: {event.bkashNumber}
+                        {event.paymentMethod === 'cash' ? 'Pay by Cash' : event.bkashNumber ? `bKash: ${event.bkashNumber}` : ''}
                       </p>
                     )}
                   </div>

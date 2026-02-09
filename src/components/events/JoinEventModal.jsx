@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import toast from 'react-hot-toast';
 import { Modal, Button, Input } from '../common';
 import { formatCurrency } from '../../utils/helpers';
 import { validationRules } from '../../utils/validators';
+import { PAYMENT_METHODS } from '../../config/constants';
 
 export default function JoinEventModal({
   event,
@@ -13,6 +12,7 @@ export default function JoinEventModal({
   isLoading,
 }) {
   const isPaid = event?.registrationFee > 0;
+  const isCash = event?.paymentMethod === PAYMENT_METHODS.CASH;
 
   const {
     register,
@@ -29,7 +29,7 @@ export default function JoinEventModal({
     }
   };
 
-  const handleFreeJoin = async () => {
+  const handleCashOrFreeJoin = async () => {
     const result = await onJoin(null);
     if (result) {
       onClose();
@@ -38,16 +38,19 @@ export default function JoinEventModal({
 
   if (!event) return null;
 
+  const isBkashPaid = isPaid && !isCash;
+  const isCashPaid = isPaid && isCash;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isPaid ? 'Payment Required' : 'Join Event'}
+      title={isBkashPaid ? 'Payment Required' : isCashPaid ? 'Cash Payment' : 'Join Event'}
       size="md"
     >
-      <form onSubmit={isPaid ? handleSubmit(onSubmit) : undefined}>
+      <form onSubmit={isBkashPaid ? handleSubmit(onSubmit) : undefined}>
         <Modal.Body>
-          {isPaid ? (
+          {isBkashPaid ? (
             <div className="space-y-4">
               <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                 <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
@@ -83,6 +86,23 @@ export default function JoinEventModal({
                 </p>
               </div>
             </div>
+          ) : isCashPaid ? (
+            <div className="text-center py-4">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+                <svg className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Pay by Cash
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-2">
+                Registration Fee: <strong>{formatCurrency(event.registrationFee)}</strong>
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                You will pay in cash at the event venue. Your registration will be pending until approved by an admin.
+              </p>
+            </div>
           ) : (
             <div className="text-center py-4">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -105,13 +125,13 @@ export default function JoinEventModal({
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          {isPaid ? (
+          {isBkashPaid ? (
             <Button type="submit" isLoading={isLoading}>
               Submit Payment
             </Button>
           ) : (
-            <Button onClick={handleFreeJoin} isLoading={isLoading}>
-              Confirm Registration
+            <Button onClick={handleCashOrFreeJoin} isLoading={isLoading}>
+              {isCashPaid ? 'Register (Pay at Venue)' : 'Confirm Registration'}
             </Button>
           )}
         </Modal.Footer>

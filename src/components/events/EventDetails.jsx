@@ -6,7 +6,9 @@ import {
   PhoneIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Badge } from '../common';
-import { formatDate, formatDateTime, formatCurrency } from '../../utils/helpers';
+import { formatDate, formatDateTime, formatCurrency, getEventLiveStatus } from '../../utils/helpers';
+import { formatEventLocation } from '../../utils/formatters';
+import EventCountdown from './EventCountdown';
 
 export default function EventDetails({ event }) {
   const isFree = !event.registrationFee || event.registrationFee === 0;
@@ -14,6 +16,7 @@ export default function EventDetails({ event }) {
   const spotsLeft = event.participantLimit
     ? event.participantLimit - (event.currentParticipants || 0)
     : null;
+  const liveStatus = getEventLiveStatus(event);
 
   return (
     <Card>
@@ -36,15 +39,19 @@ export default function EventDetails({ event }) {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             {event.title}
           </h1>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant={event.status === 'ongoing' ? 'green' : 'blue'}>
-              {event.status === 'ongoing' ? 'Happening Now' : 'Upcoming'}
-            </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={liveStatus.variant} dot={liveStatus.dot}>{liveStatus.label}</Badge>
             <Badge variant={isFree ? 'green' : 'yellow'}>
               {isFree ? 'Free Event' : formatCurrency(event.registrationFee)}
             </Badge>
             {isFull && <Badge variant="red">Full</Badge>}
           </div>
+          {liveStatus.status === 'upcoming' && (
+            <div className="mt-3">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Starts in</p>
+              <EventCountdown startDate={event.startDate} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -70,7 +77,7 @@ export default function EventDetails({ event }) {
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
             <p className="font-medium text-gray-900 dark:text-white">
-              {event.location}
+              {formatEventLocation(event.location)}
             </p>
           </div>
         </div>
@@ -98,9 +105,9 @@ export default function EventDetails({ event }) {
             <p className="font-medium text-gray-900 dark:text-white">
               {isFree ? 'Free' : formatCurrency(event.registrationFee)}
             </p>
-            {!isFree && event.bkashNumber && (
+            {!isFree && (
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                bKash: {event.bkashNumber}
+                {event.paymentMethod === 'cash' ? 'Pay by Cash' : event.bkashNumber ? `bKash: ${event.bkashNumber}` : ''}
               </p>
             )}
           </div>

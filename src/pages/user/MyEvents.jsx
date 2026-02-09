@@ -8,6 +8,7 @@ import { Card, Spinner, EmptyState, Badge, Button } from '../../components/commo
 import toast from 'react-hot-toast';
 import { getUserEvents } from '../../services/event.service';
 import { formatDate, formatCurrency } from '../../utils/helpers';
+import { formatEventLocation } from '../../utils/formatters';
 import { getEventDetailsRoute, USER_ROUTES } from '../../config/routes';
 import { APP_NAME, PARTICIPANT_STATUS } from '../../config/constants';
 
@@ -116,7 +117,7 @@ export default function MyEvents() {
                       {participation.event?.startDate
                         ? formatDate(participation.event.startDate)
                         : 'Date TBD'}
-                      {participation.event?.location && ` • ${participation.event.location}`}
+                      {participation.event?.location && ` • ${formatEventLocation(participation.event.location)}`}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {getStatusBadge(participation.status)}

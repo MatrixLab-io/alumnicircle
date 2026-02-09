@@ -147,6 +147,7 @@ export const joinEvent = async (eventId, userId, userData, bkashTransactionId = 
   }
 
   const paymentRequired = event.registrationFee > 0;
+  const paymentMethod = event.paymentMethod || (paymentRequired ? 'bkash' : null);
 
   const participantData = {
     eventId,
@@ -156,6 +157,7 @@ export const joinEvent = async (eventId, userId, userData, bkashTransactionId = 
     userPhone: userData.phone,
     status: paymentRequired ? PARTICIPANT_STATUS.PENDING : PARTICIPANT_STATUS.APPROVED,
     paymentRequired,
+    paymentMethod,
     bkashTransactionId: bkashTransactionId || null,
     paymentVerified: !paymentRequired,
     paymentVerifiedAt: null,
