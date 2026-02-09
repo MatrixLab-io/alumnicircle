@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { EnvelopeIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
@@ -14,8 +14,13 @@ export default function VerifyEmail() {
   const [isResending, setIsResending] = useState(false);
 
   // If already verified, redirect
+  useEffect(() => {
+    if (isEmailVerified) {
+      navigate(PUBLIC_ROUTES.PENDING_APPROVAL);
+    }
+  }, [isEmailVerified, navigate]);
+
   if (isEmailVerified) {
-    navigate(PUBLIC_ROUTES.PENDING_APPROVAL);
     return null;
   }
 

@@ -80,7 +80,7 @@ export default function EditProfile() {
     if (!userProfile?.photo) return;
     setIsUploading(true);
     try {
-      await deleteUserPhoto(userProfile.uid, userProfile.photo);
+      await deleteUserPhoto(userProfile.uid);
       await refreshProfile();
       toast.success('Photo removed');
     } catch (error) {

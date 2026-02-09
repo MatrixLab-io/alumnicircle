@@ -12,8 +12,8 @@ import {
   startAfter,
   serverTimestamp,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage } from '../config/firebase';
+import { db } from '../config/firebase';
+import { uploadImage } from './cloudinary.service';
 import { COLLECTIONS, USER_STATUS, ITEMS_PER_PAGE } from '../config/constants';
 import { calculateProfileCompletion } from '../utils/helpers';
 
@@ -51,9 +51,7 @@ export const updateUserProfile = async (uid, data) => {
  * Upload user photo
  */
 export const uploadUserPhoto = async (uid, file) => {
-  const fileRef = ref(storage, `users/${uid}/profile/${file.name}`);
-  await uploadBytes(fileRef, file);
-  const downloadURL = await getDownloadURL(fileRef);
+  const downloadURL = await uploadImage(file, `users/${uid}`);
   await updateUserProfile(uid, { photo: downloadURL });
   return downloadURL;
 };
@@ -61,13 +59,7 @@ export const uploadUserPhoto = async (uid, file) => {
 /**
  * Delete user photo
  */
-export const deleteUserPhoto = async (uid, photoUrl) => {
-  try {
-    const fileRef = ref(storage, photoUrl);
-    await deleteObject(fileRef);
-  } catch (error) {
-    console.error('Error deleting photo:', error);
-  }
+export const deleteUserPhoto = async (uid) => {
   await updateUserProfile(uid, { photo: null });
 };
 

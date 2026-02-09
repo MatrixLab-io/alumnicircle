@@ -12,8 +12,8 @@ import {
   serverTimestamp,
   increment,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage } from '../config/firebase';
+import { db } from '../config/firebase';
+import { uploadImage } from './cloudinary.service';
 import { COLLECTIONS, EVENT_STATUS, PARTICIPANT_STATUS } from '../config/constants';
 
 /**
@@ -35,9 +35,7 @@ export const createEvent = async (eventData, adminUid) => {
  * Upload event banner
  */
 export const uploadEventBanner = async (eventId, file) => {
-  const fileRef = ref(storage, `events/${eventId}/${file.name}`);
-  await uploadBytes(fileRef, file);
-  return await getDownloadURL(fileRef);
+  return await uploadImage(file, `events/${eventId}`);
 };
 
 /**

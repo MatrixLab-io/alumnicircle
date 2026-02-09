@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ClockIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
@@ -11,8 +12,13 @@ export default function PendingApproval() {
   const { userProfile, logout, refreshProfile, isApproved } = useAuth();
 
   // If approved, redirect to dashboard
+  useEffect(() => {
+    if (isApproved) {
+      navigate(USER_ROUTES.DASHBOARD);
+    }
+  }, [isApproved, navigate]);
+
   if (isApproved) {
-    navigate(USER_ROUTES.DASHBOARD);
     return null;
   }
 
