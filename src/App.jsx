@@ -14,6 +14,7 @@ import PublicRoute from './components/auth/PublicRoute';
 
 // Public Pages
 import Landing from './pages/public/Landing';
+import PublicEvent from './pages/public/PublicEvent';
 import NotFound from './pages/public/NotFound';
 
 // Auth Pages
@@ -39,6 +40,7 @@ import AllUsers from './pages/admin/AllUsers';
 import CreateEvent from './pages/admin/CreateEvent';
 import ManageEvents from './pages/admin/ManageEvents';
 import EventParticipants from './pages/admin/EventParticipants';
+import EditEvent from './pages/admin/EditEvent';
 import ManageAdmins from './pages/admin/ManageAdmins';
 
 // Route configs
@@ -54,6 +56,7 @@ export default function App() {
               <Routes>
                 {/* Public Routes */}
                 <Route path={PUBLIC_ROUTES.HOME} element={<Landing />} />
+                <Route path={PUBLIC_ROUTES.PUBLIC_EVENT} element={<PublicEvent />} />
 
                 {/* Auth Routes (only for non-authenticated users) */}
                 <Route element={<AuthLayout />}>
@@ -108,6 +111,7 @@ export default function App() {
                   <Route path={ADMIN_ROUTES.ALL_USERS} element={<AllUsers />} />
                   <Route path={ADMIN_ROUTES.CREATE_EVENT} element={<CreateEvent />} />
                   <Route path={ADMIN_ROUTES.MANAGE_EVENTS} element={<ManageEvents />} />
+                  <Route path={ADMIN_ROUTES.EDIT_EVENT} element={<EditEvent />} />
                   <Route path={ADMIN_ROUTES.EVENT_PARTICIPANTS} element={<EventParticipants />} />
                 </Route>
 

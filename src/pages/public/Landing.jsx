@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarIcon, UsersIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../../contexts/AuthContext';
+import { Navbar } from '../../components/layout';
 import { Card, Button, Badge, Spinner } from '../../components/common';
 import { ThemeToggle } from '../../components/theme';
 import { getPublicEvents } from '../../services/event.service';
 import { formatDate, formatCurrency } from '../../utils/helpers';
-import { PUBLIC_ROUTES } from '../../config/routes';
+import { PUBLIC_ROUTES, USER_ROUTES, ADMIN_ROUTES } from '../../config/routes';
 import { APP_NAME } from '../../config/constants';
 
 export default function Landing() {
+  const { user, isAdmin } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,33 +32,37 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
-      <header className="py-4 px-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xl">A</span>
+      {user ? (
+        <Navbar />
+      ) : (
+        <header className="py-4 px-6">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-[0_0_20px_rgba(147,51,234,0.5)]">
+                <span className="text-white font-bold text-xl">A</span>
+              </div>
+              <span className="font-bold text-2xl text-gray-900 dark:text-white">
+                {APP_NAME}
+              </span>
             </div>
-            <span className="font-bold text-2xl text-gray-900 dark:text-white">
-              {APP_NAME}
-            </span>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              <Link
+                to={PUBLIC_ROUTES.LOGIN}
+                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium"
+              >
+                Sign In
+              </Link>
+              <Link
+                to={PUBLIC_ROUTES.REGISTER}
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-500 hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] text-white font-medium rounded-lg transition-all duration-300 cursor-pointer"
+              >
+                Join Now
+              </Link>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <Link
-              to={PUBLIC_ROUTES.LOGIN}
-              className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium"
-            >
-              Sign In
-            </Link>
-            <Link
-              to={PUBLIC_ROUTES.REGISTER}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
-            >
-              Join Now
-            </Link>
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Hero Section */}
       <section className="py-20 px-4">
@@ -73,16 +80,33 @@ export default function Landing() {
             Join our exclusive alumni network to stay connected, discover what your classmates are up to, and never miss a reunion event.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link to={PUBLIC_ROUTES.REGISTER}>
-              <Button size="lg" className="px-8">
-                Get Started
-              </Button>
-            </Link>
-            <Link to={PUBLIC_ROUTES.LOGIN}>
-              <Button size="lg" variant="outline" className="px-8">
-                I Have an Account
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link to={isAdmin ? ADMIN_ROUTES.DASHBOARD : USER_ROUTES.DASHBOARD}>
+                  <Button size="lg" className="px-8">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+                <Link to={USER_ROUTES.DIRECTORY}>
+                  <Button size="lg" variant="outline" className="px-8">
+                    Browse Directory
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to={PUBLIC_ROUTES.REGISTER}>
+                  <Button size="lg" className="px-8">
+                    Get Started
+                  </Button>
+                </Link>
+                <Link to={PUBLIC_ROUTES.LOGIN}>
+                  <Button size="lg" variant="outline" className="px-8">
+                    I Have an Account
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -198,23 +222,25 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto">
-          <Card className="text-center bg-gradient-to-r from-primary-600 to-primary-700 border-0">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Ready to Reconnect?
-            </h2>
-            <p className="text-primary-100 mb-8 max-w-xl mx-auto">
-              Join hundreds of batch 2003 alumni who are already connected. Registration is free and takes less than a minute.
-            </p>
-            <Link to={PUBLIC_ROUTES.REGISTER}>
-              <Button variant="glass" size="lg" className="text-white border-white/30">
-                Create Your Account
-              </Button>
-            </Link>
-          </Card>
-        </div>
-      </section>
+      {!user && (
+        <section className="py-20 px-4">
+          <div className="max-w-4xl mx-auto">
+            <Card className="text-center bg-gradient-to-r from-primary-600 to-primary-700 border-0">
+              <h2 className="text-3xl font-bold text-white mb-4">
+                Ready to Reconnect?
+              </h2>
+              <p className="text-primary-100 mb-8 max-w-xl mx-auto">
+                Join hundreds of batch 2003 alumni who are already connected. Registration is free and takes less than a minute.
+              </p>
+              <Link to={PUBLIC_ROUTES.REGISTER}>
+                <Button variant="glass" size="lg" className="text-white border-white/30">
+                  Create Your Account
+                </Button>
+              </Link>
+            </Card>
+          </div>
+        </section>
+      )}
 
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-gray-200 dark:border-gray-800">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { CheckIcon, XMarkIcon, UserIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, XMarkIcon, UserIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
@@ -14,10 +14,18 @@ export default function UserApprovals() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchPendingUsers();
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchPendingUsers();
+    setRefreshing(false);
+    toast.success('Data refreshed');
+  };
 
   const fetchPendingUsers = async () => {
     setLoading(true);
@@ -69,6 +77,16 @@ export default function UserApprovals() {
       <PageHeader
         title="User Approvals"
         description={`${users.length} users waiting for approval`}
+        actions={
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            isLoading={refreshing}
+            leftIcon={<ArrowPathIcon className="h-4 w-4" />}
+          >
+            Refresh
+          </Button>
+        }
       />
 
       {loading ? (

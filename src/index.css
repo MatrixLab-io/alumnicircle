@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
-/* Custom CSS Variables for Theme */
+/* Custom CSS Variables for Theme - Purple */
 @theme {
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
+  --color-primary-50: #faf5ff;
+  --color-primary-100: #f3e8ff;
+  --color-primary-200: #e9d5ff;
+  --color-primary-300: #d8b4fe;
+  --color-primary-400: #c084fc;
+  --color-primary-500: #a855f7;
+  --color-primary-600: #9333ea;
+  --color-primary-700: #7e22ce;
+  --color-primary-800: #6b21a8;
+  --color-primary-900: #581c87;
+  --color-primary-950: #3b0764;
 }
 
 /* Base Styles */
@@ -34,7 +34,7 @@ body {
 }
 
 *:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #a855f7;
   outline-offset: 2px;
 }
 
@@ -71,7 +71,7 @@ body {
 
 /* Selection */
 ::selection {
-  background-color: rgba(59, 130, 246, 0.3);
+  background-color: rgba(168, 85, 247, 0.3);
 }
 
 /* Headings */
@@ -79,9 +79,31 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
 }
 
-/* Links */
+/* Links & Clickable Elements */
 a {
+  cursor: pointer;
   transition: color 0.2s ease;
+}
+
+button, [role="button"], [type="button"], [type="submit"], [type="reset"],
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Glow Utilities */
+.glow-primary {
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.4);
+}
+
+.glow-primary-lg {
+  box-shadow: 0 0 30px rgba(147, 51, 234, 0.5), 0 0 60px rgba(147, 51, 234, 0.2);
+}
+
+/* Action link glow on hover */
+a.text-primary-600:hover,
+a.text-primary-400:hover,
+a.dark\:text-primary-400:hover {
+  text-shadow: 0 0 12px rgba(147, 51, 234, 0.5);
 }
 
 /* Placeholder */

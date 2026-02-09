@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
   ArrowLeftIcon,
+  ArrowPathIcon,
   CheckIcon,
   XMarkIcon,
   DocumentArrowDownIcon,
@@ -32,6 +33,7 @@ export default function EventParticipants() {
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
@@ -59,6 +61,23 @@ export default function EventParticipants() {
       toast.error('Failed to load event data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const [eventData, participantData] = await Promise.all([
+        getEventById(id),
+        getEventParticipants(id),
+      ]);
+      setEvent(eventData);
+      setParticipants(participantData);
+      toast.success('Data refreshed');
+    } catch (error) {
+      toast.error('Failed to refresh');
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -138,6 +157,14 @@ export default function EventParticipants() {
         description={event?.title}
         actions={
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              isLoading={refreshing}
+              leftIcon={<ArrowPathIcon className="h-4 w-4" />}
+            >
+              Refresh
+            </Button>
             <Button
               variant="outline"
               onClick={handleExport}
@@ -235,9 +262,12 @@ export default function EventParticipants() {
                       )}
                     </div>
                     {participant.bkashTransactionId && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        TxID: {participant.bkashTransactionId}
-                      </p>
+                      <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                        <span className="text-xs font-medium text-amber-700 dark:text-amber-300">TxID:</span>
+                        <span className="font-mono text-sm font-bold text-amber-900 dark:text-amber-100 tracking-wider select-all">
+                          {participant.bkashTransactionId}
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>

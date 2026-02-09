@@ -12,6 +12,11 @@ import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firest
 import { auth, db, googleProvider } from '../config/firebase';
 import { USER_ROLES, USER_STATUS, VISIBILITY, COLLECTIONS } from '../config/constants';
 
+const actionCodeSettings = {
+  url: import.meta.env.VITE_APP_URL + '/login?verified=true',
+  handleCodeInApp: false,
+};
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -90,8 +95,8 @@ export function AuthProvider({ children }) {
       // Create user profile in Firestore
       await createUserProfile(result.user.uid, { email, name, phone });
 
-      // Send email verification
-      await sendEmailVerification(result.user);
+      // Send email verification with redirect
+      await sendEmailVerification(result.user, actionCodeSettings);
 
       return { success: true, user: result.user };
     } catch (err) {
@@ -167,7 +172,7 @@ export function AuthProvider({ children }) {
   const resendVerificationEmail = async () => {
     if (!user) return { success: false, error: 'No user logged in' };
     try {
-      await sendEmailVerification(user);
+      await sendEmailVerification(user, actionCodeSettings);
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };

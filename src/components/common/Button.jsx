@@ -1,12 +1,12 @@
 import { cn } from '../../utils/helpers';
 
 const variants = {
-  primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-  secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500',
-  outline: 'border-2 border-primary-600 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 focus:ring-primary-500',
+  primary: 'bg-primary-600 text-white hover:bg-primary-500 hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] focus:ring-primary-500',
+  secondary: 'bg-gray-600 text-white hover:bg-gray-500 hover:shadow-[0_0_15px_rgba(107,114,128,0.4)] focus:ring-gray-500',
+  outline: 'border-2 border-primary-600 text-primary-600 hover:bg-primary-50 hover:shadow-[0_0_20px_rgba(147,51,234,0.3)] dark:hover:bg-primary-900/20 focus:ring-primary-500',
   ghost: 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 focus:ring-gray-500',
-  danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-  glass: 'bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm border border-white/30 dark:border-gray-700/30 text-gray-900 dark:text-white hover:bg-white/30 dark:hover:bg-gray-800/30',
+  danger: 'bg-red-600 text-white hover:bg-red-500 hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] focus:ring-red-500',
+  glass: 'bg-white/20 dark:bg-gray-800/20 backdrop-blur-sm border border-white/30 dark:border-gray-700/30 text-gray-900 dark:text-white hover:bg-white/30 dark:hover:bg-gray-800/30 hover:shadow-[0_0_20px_rgba(147,51,234,0.3)]',
 };
 
 const sizes = {
@@ -33,9 +33,9 @@ export default function Button({
       type={type}
       disabled={disabled || isLoading}
       className={cn(
-        'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200',
+        'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-300 cursor-pointer',
         'focus:outline-none focus:ring-2 focus:ring-offset-2',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
+        'disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none',
         variants[variant],
         sizes[size],
         fullWidth && 'w-full',

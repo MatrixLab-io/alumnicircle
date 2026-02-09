@@ -6,7 +6,9 @@ import {
   CalendarIcon,
   UserPlusIcon,
   CheckCircleIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
 import { Card, Button, Badge, Spinner, Avatar } from '../../components/common';
@@ -22,26 +24,35 @@ export default function AdminDashboard() {
   const [eventStats, setEventStats] = useState(null);
   const [pendingUsers, setPendingUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const [users, events, pending] = await Promise.all([
+        getUserStats(),
+        getEventStats(),
+        getPendingUsers(),
+      ]);
+      setUserStats(users);
+      setEventStats(events);
+      setPendingUsers(pending.slice(0, 5));
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [users, events, pending] = await Promise.all([
-          getUserStats(),
-          getEventStats(),
-          getPendingUsers(),
-        ]);
-        setUserStats(users);
-        setEventStats(events);
-        setPendingUsers(pending.slice(0, 5));
-      } catch (error) {
-        console.error('Error fetching admin data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+    toast.success('Data refreshed');
+  };
 
   if (loading) {
     return <Spinner.Page message="Loading dashboard..." />;
@@ -57,9 +68,19 @@ export default function AdminDashboard() {
         title="Admin Dashboard"
         description="Manage users, events, and community settings"
         actions={
-          <Link to={ADMIN_ROUTES.CREATE_EVENT}>
-            <Button>Create Event</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              isLoading={refreshing}
+              leftIcon={<ArrowPathIcon className="h-4 w-4" />}
+            >
+              Refresh
+            </Button>
+            <Link to={ADMIN_ROUTES.CREATE_EVENT}>
+              <Button>Create Event</Button>
+            </Link>
+          </div>
         }
       />
 

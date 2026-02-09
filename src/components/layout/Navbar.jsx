@@ -4,6 +4,7 @@ import { Disclosure, Menu, Transition } from '@headlessui/react';
 import {
   Bars3Icon,
   XMarkIcon,
+  HomeIcon,
   UserCircleIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
@@ -145,6 +146,21 @@ export default function Navbar() {
                           <Menu.Item>
                             {({ active }) => (
                               <Link
+                                to={isAdmin ? ADMIN_ROUTES.DASHBOARD : USER_ROUTES.DASHBOARD}
+                                className={cn(
+                                  'flex items-center px-4 py-2 text-sm',
+                                  active && 'bg-gray-100 dark:bg-gray-800',
+                                  'text-gray-700 dark:text-gray-300'
+                                )}
+                              >
+                                <HomeIcon className="mr-3 h-5 w-5" />
+                                Dashboard
+                              </Link>
+                            )}
+                          </Menu.Item>
+                          <Menu.Item>
+                            {({ active }) => (
+                              <Link
                                 to={USER_ROUTES.PROFILE}
                                 className={cn(
                                   'flex items-center px-4 py-2 text-sm',
@@ -205,7 +221,7 @@ export default function Navbar() {
                     </Link>
                     <Link
                       to={PUBLIC_ROUTES.REGISTER}
-                      className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-500 hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] rounded-lg transition-all duration-300 cursor-pointer"
                     >
                       Register
                     </Link>

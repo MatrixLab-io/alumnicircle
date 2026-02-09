@@ -3,7 +3,7 @@ import {
   MapPinIcon,
   UsersIcon,
   CurrencyDollarIcon,
-  ClockIcon,
+  PhoneIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Badge } from '../common';
 import { formatDate, formatDateTime, formatCurrency } from '../../utils/helpers';
@@ -118,6 +118,38 @@ export default function EventDetails({ event }) {
           </p>
         </div>
       </div>
+
+      {/* Contact Persons */}
+      {event.contactPersons?.length > 0 && (
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+            Contact Information
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {event.contactPersons.map((cp, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <div className="p-2 rounded-full bg-primary-100 dark:bg-primary-900/30">
+                  <PhoneIcon className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white text-sm">
+                    {cp.name}
+                  </p>
+                  <a
+                    href={`tel:${cp.phone}`}
+                    className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+                  >
+                    {cp.phone}
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

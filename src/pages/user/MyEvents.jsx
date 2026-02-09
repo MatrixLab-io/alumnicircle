@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { CalendarIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
 import { Card, Spinner, EmptyState, Badge, Button } from '../../components/common';
+import toast from 'react-hot-toast';
 import { getUserEvents } from '../../services/event.service';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import { getEventDetailsRoute, USER_ROUTES } from '../../config/routes';
@@ -14,6 +15,7 @@ export default function MyEvents() {
   const { userProfile } = useAuth();
   const [participations, setParticipations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchMyEvents();
@@ -55,9 +57,24 @@ export default function MyEvents() {
         title="My Events"
         description="Events you've registered for"
         actions={
-          <Link to={USER_ROUTES.EVENTS}>
-            <Button variant="outline">Browse Events</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                setRefreshing(true);
+                await fetchMyEvents();
+                setRefreshing(false);
+                toast.success('Data refreshed');
+              }}
+              isLoading={refreshing}
+              leftIcon={<ArrowPathIcon className="h-4 w-4" />}
+            >
+              Refresh
+            </Button>
+            <Link to={USER_ROUTES.EVENTS}>
+              <Button variant="outline">Browse Events</Button>
+            </Link>
+          </div>
         }
       />
 
@@ -125,9 +142,12 @@ export default function MyEvents() {
 
               {participation.bkashTransactionId && (
                 <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Transaction ID: <span className="font-mono">{participation.bkashTransactionId}</span>
-                  </p>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Transaction ID:</span>
+                    <span className="font-mono text-sm font-bold text-amber-900 dark:text-amber-100 tracking-wider select-all">
+                      {participation.bkashTransactionId}
+                    </span>
+                  </div>
                 </div>
               )}
             </Card>

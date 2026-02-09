@@ -1,26 +1,86 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useForm } from 'react-hook-form';
-import { PhotoIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, PlusIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
 import { Card, Button, Input, Textarea, Select, Toggle, Spinner } from '../../components/common';
-import { createEvent, uploadEventBanner, updateEvent } from '../../services/event.service';
+import { getEventById, updateEvent, uploadEventBanner } from '../../services/event.service';
 import { ADMIN_ROUTES } from '../../config/routes';
-import { APP_NAME } from '../../config/constants';
+import { APP_NAME, EVENT_STATUS } from '../../config/constants';
 
-export default function CreateEvent() {
+const formatDateForInput = (date) => {
+  if (!date) return '';
+  const d = date?.toDate ? date.toDate() : new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+export default function EditEvent() {
+  const { id } = useParams();
   const navigate = useNavigate();
   const { userProfile } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [bannerPreview, setBannerPreview] = useState(null);
   const [bannerFile, setBannerFile] = useState(null);
   const [isPublic, setIsPublic] = useState(true);
   const [isPaid, setIsPaid] = useState(false);
   const [contactPersons, setContactPersons] = useState([{ name: '', phone: '' }]);
+  const [eventStatus, setEventStatus] = useState(EVENT_STATUS.UPCOMING);
   const fileInputRef = useRef(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm();
+
+  useEffect(() => {
+    fetchEvent();
+  }, [id]);
+
+  const fetchEvent = async () => {
+    setLoading(true);
+    try {
+      const event = await getEventById(id);
+      if (!event) {
+        toast.error('Event not found');
+        navigate(ADMIN_ROUTES.MANAGE_EVENTS);
+        return;
+      }
+
+      // Pre-fill form
+      reset({
+        title: event.title || '',
+        description: event.description || '',
+        location: event.location || '',
+        startDate: formatDateForInput(event.startDate),
+        endDate: formatDateForInput(event.endDate),
+        participantLimit: event.participantLimit || '',
+        registrationFee: event.registrationFee || '',
+        bkashNumber: event.bkashNumber || '',
+      });
+
+      setIsPublic(event.isPublic !== false);
+      setIsPaid(event.registrationFee > 0);
+      setEventStatus(event.status || EVENT_STATUS.UPCOMING);
+      if (event.banner) setBannerPreview(event.banner);
+      if (event.contactPersons?.length > 0) {
+        setContactPersons(event.contactPersons);
+      }
+    } catch (error) {
+      console.error('Error fetching event:', error);
+      toast.error('Failed to load event');
+      navigate(ADMIN_ROUTES.MANAGE_EVENTS);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const addContactPerson = () => {
     setContactPersons([...contactPersons, { name: '', phone: '' }]);
@@ -36,24 +96,6 @@ export default function CreateEvent() {
     );
   };
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm({
-    defaultValues: {
-      title: '',
-      description: '',
-      location: '',
-      startDate: '',
-      endDate: '',
-      participantLimit: '',
-      registrationFee: '',
-      bkashNumber: '',
-    },
-  });
-
   const handleBannerSelect = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -63,9 +105,8 @@ export default function CreateEvent() {
   };
 
   const onSubmit = async (data) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      // Create event first
       const eventData = {
         title: data.title,
         description: data.description,
@@ -76,37 +117,56 @@ export default function CreateEvent() {
         registrationFee: isPaid ? parseFloat(data.registrationFee) : 0,
         bkashNumber: isPaid ? data.bkashNumber : null,
         isPublic,
-        banner: null,
+        status: eventStatus,
         contactPersons: contactPersons.filter((cp) => cp.name && cp.phone),
       };
 
-      const result = await createEvent(eventData, userProfile.uid);
-
-      // Upload banner if exists
+      // Upload new banner if selected
       if (bannerFile) {
-        const bannerUrl = await uploadEventBanner(result.id, bannerFile);
-        await updateEvent(result.id, { banner: bannerUrl });
+        const bannerUrl = await uploadEventBanner(id, bannerFile);
+        eventData.banner = bannerUrl;
       }
 
-      toast.success('Event created successfully');
+      await updateEvent(id, eventData);
+      toast.success('Event updated successfully');
       navigate(ADMIN_ROUTES.MANAGE_EVENTS);
     } catch (error) {
-      console.error('Error creating event:', error);
-      toast.error('Failed to create event');
+      console.error('Error updating event:', error);
+      toast.error('Failed to update event');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return <Spinner.Page message="Loading event..." />;
+  }
+
+  const statusOptions = [
+    { value: EVENT_STATUS.UPCOMING, label: 'Upcoming' },
+    { value: EVENT_STATUS.ONGOING, label: 'Ongoing' },
+    { value: EVENT_STATUS.COMPLETED, label: 'Completed' },
+    { value: EVENT_STATUS.CANCELLED, label: 'Cancelled' },
+  ];
 
   return (
     <>
       <Helmet>
-        <title>Create Event | {APP_NAME}</title>
+        <title>Edit Event | {APP_NAME}</title>
       </Helmet>
 
       <PageHeader
-        title="Create Event"
-        description="Create a new event for the community"
+        title="Edit Event"
+        description="Update event details"
+        actions={
+          <Button
+            variant="outline"
+            onClick={() => navigate(ADMIN_ROUTES.MANAGE_EVENTS)}
+            leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
+          >
+            Back to Events
+          </Button>
+        }
       />
 
       <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl space-y-6">
@@ -193,6 +253,29 @@ export default function CreateEvent() {
               type="datetime-local"
               {...register('endDate')}
             />
+          </div>
+        </Card>
+
+        {/* Event Status */}
+        <Card>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Event Status
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {statusOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setEventStatus(opt.value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                  eventStatus === opt.value
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </Card>
 
@@ -322,8 +405,8 @@ export default function CreateEvent() {
           >
             Cancel
           </Button>
-          <Button type="submit" isLoading={isLoading}>
-            Create Event
+          <Button type="submit" isLoading={isSubmitting}>
+            Update Event
           </Button>
         </div>
       </form>

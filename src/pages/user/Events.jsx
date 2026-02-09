@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { CalendarIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import { PageHeader } from '../../components/layout';
-import { Spinner, EmptyState, Badge } from '../../components/common';
+import { Button, Spinner, EmptyState, Badge } from '../../components/common';
 import { EventCard } from '../../components/events';
 import { getAllEvents } from '../../services/event.service';
 import { APP_NAME } from '../../config/constants';
@@ -10,6 +11,7 @@ import { APP_NAME } from '../../config/constants';
 export default function Events() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('upcoming');
 
   useEffect(() => {
@@ -47,6 +49,21 @@ export default function Events() {
       <PageHeader
         title="Events"
         description="Discover and join alumni events"
+        actions={
+          <Button
+            variant="outline"
+            onClick={async () => {
+              setRefreshing(true);
+              await fetchEvents();
+              setRefreshing(false);
+              toast.success('Data refreshed');
+            }}
+            isLoading={refreshing}
+            leftIcon={<ArrowPathIcon className="h-4 w-4" />}
+          >
+            Refresh
+          </Button>
+        }
       />
 
       {/* Filters */}

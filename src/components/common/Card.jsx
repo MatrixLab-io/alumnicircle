@@ -27,7 +27,7 @@ export default function Card({
         'rounded-xl shadow-xl',
         variants[variant],
         paddings[padding],
-        hover && 'transition-all duration-200 hover:shadow-2xl hover:scale-[1.02]',
+        hover && 'transition-all duration-300 hover:shadow-[0_0_30px_rgba(147,51,234,0.3)] hover:scale-[1.02] cursor-pointer',
         className
       )}
       {...props}

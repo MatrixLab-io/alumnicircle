@@ -6,39 +6,53 @@ import {
   CalendarIcon,
   UserCircleIcon,
   ArrowRightIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
 import { Card, Button, Badge, Spinner, Avatar } from '../../components/common';
 import { getUserStats } from '../../services/user.service';
-import { getAllEvents } from '../../services/event.service';
+import { getAllEvents, getUserEvents } from '../../services/event.service';
 import { formatDate } from '../../utils/helpers';
-import { USER_ROUTES } from '../../config/routes';
+import { USER_ROUTES, getEventDetailsRoute } from '../../config/routes';
 import { APP_NAME } from '../../config/constants';
 
 export default function Dashboard() {
   const { userProfile } = useAuth();
   const [stats, setStats] = useState(null);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const [userStats, events, myEvents] = await Promise.all([
+        getUserStats(),
+        getAllEvents({ status: 'upcoming' }),
+        userProfile?.uid ? getUserEvents(userProfile.uid) : [],
+      ]);
+      setStats(userStats);
+      setUpcomingEvents(events.slice(0, 3));
+      setRegisteredEventIds(new Set(myEvents.map((e) => e.eventId)));
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [userStats, events] = await Promise.all([
-          getUserStats(),
-          getAllEvents({ status: 'upcoming' }),
-        ]);
-        setStats(userStats);
-        setUpcomingEvents(events.slice(0, 3));
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+    toast.success('Data refreshed');
+  };
 
   if (loading) {
     return <Spinner.Page message="Loading dashboard..." />;
@@ -55,6 +69,16 @@ export default function Dashboard() {
       <PageHeader
         title={`Welcome back, ${userProfile?.name?.split(' ')[0]}!`}
         description="Here's what's happening in your alumni community"
+        actions={
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            isLoading={refreshing}
+            leftIcon={<ArrowPathIcon className="h-4 w-4" />}
+          >
+            Refresh
+          </Button>
+        }
       />
 
       {/* Profile Completion Banner */}
@@ -226,9 +250,20 @@ export default function Dashboard() {
                       {formatDate(event.startDate)} - {event.location}
                     </p>
                   </div>
-                  <Badge variant={event.registrationFee > 0 ? 'yellow' : 'green'} size="sm">
-                    {event.registrationFee > 0 ? 'Paid' : 'Free'}
-                  </Badge>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Badge variant={event.registrationFee > 0 ? 'yellow' : 'green'} size="sm">
+                      {event.registrationFee > 0 ? 'Paid' : 'Free'}
+                    </Badge>
+                    {registeredEventIds.has(event.id) ? (
+                      <Badge variant="green" size="sm">Registered</Badge>
+                    ) : (
+                      <Link to={getEventDetailsRoute(event.id)}>
+                        <Button size="sm">
+                          Register
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

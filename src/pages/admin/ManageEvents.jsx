@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
   CalendarIcon,
@@ -8,6 +8,7 @@ import {
   UsersIcon,
   TrashIcon,
   ArchiveBoxIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -19,10 +20,19 @@ import { ADMIN_ROUTES, getEditEventRoute, getEventParticipantsRoute } from '../.
 import { APP_NAME, EVENT_STATUS } from '../../config/constants';
 
 export default function ManageEvents() {
+  const navigate = useNavigate();
   const { userProfile } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchEvents();
+    setRefreshing(false);
+    toast.success('Data refreshed');
+  };
 
   useEffect(() => {
     fetchEvents();
@@ -96,11 +106,21 @@ export default function ManageEvents() {
         title="Manage Events"
         description={`${events.length} total events`}
         actions={
-          <Link to={ADMIN_ROUTES.CREATE_EVENT}>
-            <Button leftIcon={<PlusIcon className="h-4 w-4" />}>
-              Create Event
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              isLoading={refreshing}
+              leftIcon={<ArrowPathIcon className="h-4 w-4" />}
+            >
+              Refresh
             </Button>
-          </Link>
+            <Link to={ADMIN_ROUTES.CREATE_EVENT}>
+              <Button leftIcon={<PlusIcon className="h-4 w-4" />}>
+                Create Event
+              </Button>
+            </Link>
+          </div>
         }
       />
 
@@ -113,7 +133,7 @@ export default function ManageEvents() {
           icon={<CalendarIcon className="h-12 w-12" />}
           title="No events yet"
           description="Create your first event to get started"
-          action={() => window.location.href = ADMIN_ROUTES.CREATE_EVENT}
+          action={() => navigate(ADMIN_ROUTES.CREATE_EVENT)}
           actionLabel="Create Event"
         />
       ) : (
@@ -180,7 +200,7 @@ export default function ManageEvents() {
                   >
                     <Dropdown.Item
                       icon={<PencilSquareIcon className="h-4 w-4" />}
-                      onClick={() => window.location.href = getEditEventRoute(event.id)}
+                      onClick={() => navigate(getEditEventRoute(event.id))}
                     >
                       Edit Event
                     </Dropdown.Item>
