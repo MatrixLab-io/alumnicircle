@@ -4,10 +4,10 @@ import { Toaster } from 'react-hot-toast';
 
 // Contexts
 import { ThemeProvider } from './contexts/ThemeContext';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Components
-import { ErrorBoundary } from './components/common';
+import { ErrorBoundary, FeedbackWidget } from './components/common';
 import { MainLayout, AuthLayout, AdminLayout } from './components/layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PublicRoute from './components/auth/PublicRoute';
@@ -46,6 +46,17 @@ import ManageAdmins from './pages/admin/ManageAdmins';
 
 // Route configs
 import { PUBLIC_ROUTES, USER_ROUTES, ADMIN_ROUTES } from './config/routes';
+
+function AuthAwareFeedback() {
+  const { userProfile } = useAuth();
+  if (!userProfile) return null;
+  return (
+    <FeedbackWidget
+      userName={userProfile.name || ''}
+      userEmail={userProfile.email || ''}
+    />
+  );
+}
 
 export default function App() {
   return (
@@ -132,6 +143,9 @@ export default function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
+
+            {/* Feedback Widget */}
+            <AuthAwareFeedback />
 
             {/* Toast Notifications */}
             <Toaster
