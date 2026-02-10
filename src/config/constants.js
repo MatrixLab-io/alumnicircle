@@ -35,6 +35,7 @@ export const PARTICIPANT_STATUS = {
 // Payment Methods
 export const PAYMENT_METHODS = {
   BKASH: 'bkash',
+  NAGAD: 'nagad',
   CASH: 'cash',
 };
 

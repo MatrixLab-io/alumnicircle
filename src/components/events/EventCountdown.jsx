@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ClockIcon } from '@heroicons/react/24/outline';
 
 function getTimeLeft(targetDate) {
   const now = new Date();
@@ -35,16 +36,18 @@ export default function EventCountdown({ startDate, compact = false }) {
   if (!timeLeft) return null;
 
   if (compact) {
-    const parts = [];
-    if (timeLeft.days > 0) parts.push(`${timeLeft.days}d`);
-    parts.push(`${timeLeft.hours}h`);
-    parts.push(`${timeLeft.minutes}m`);
-    parts.push(`${timeLeft.seconds}s`);
-
     return (
-      <span className="text-xs font-mono text-primary-600 dark:text-primary-400">
-        {parts.join(' ')}
-      </span>
+      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800">
+        <ClockIcon className="h-3.5 w-3.5 text-primary-500" />
+        <div className="flex items-center gap-1 font-mono text-xs font-semibold">
+          {timeLeft.days > 0 && (
+            <span className="text-primary-700 dark:text-primary-300">{timeLeft.days}<span className="text-primary-400 dark:text-primary-500">d</span></span>
+          )}
+          <span className="text-primary-700 dark:text-primary-300">{String(timeLeft.hours).padStart(2, '0')}<span className="text-primary-400 dark:text-primary-500">h</span></span>
+          <span className="text-primary-700 dark:text-primary-300">{String(timeLeft.minutes).padStart(2, '0')}<span className="text-primary-400 dark:text-primary-500">m</span></span>
+          <span className="text-primary-700 dark:text-primary-300">{String(timeLeft.seconds).padStart(2, '0')}<span className="text-primary-400 dark:text-primary-500">s</span></span>
+        </div>
+      </div>
     );
   }
 
@@ -57,16 +60,21 @@ export default function EventCountdown({ startDate, compact = false }) {
 
   return (
     <div className="flex items-center gap-2">
-      {units.map(({ label, value }) => (
-        <div key={label} className="text-center">
-          <div className="bg-primary-100 dark:bg-primary-900/30 rounded-lg px-2 py-1 min-w-[2.5rem]">
-            <span className="text-sm font-bold font-mono text-primary-700 dark:text-primary-300">
-              {String(value).padStart(2, '0')}
+      {units.map(({ label, value }, i) => (
+        <div key={label} className="flex items-center gap-2">
+          <div className="text-center">
+            <div className="bg-primary-100 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-lg px-2.5 py-1.5 min-w-[2.75rem]">
+              <span className="text-base font-bold font-mono text-primary-700 dark:text-primary-300">
+                {String(value).padStart(2, '0')}
+              </span>
+            </div>
+            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 mt-1 block">
+              {label}
             </span>
           </div>
-          <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 block">
-            {label}
-          </span>
+          {i < units.length - 1 && (
+            <span className="text-primary-400 dark:text-primary-600 font-bold text-sm mb-4">:</span>
+          )}
         </div>
       ))}
     </div>

@@ -126,7 +126,7 @@ export const getPublicEvents = async () => {
 /**
  * Join event (create participant record)
  */
-export const joinEvent = async (eventId, userId, userData, bkashTransactionId = null) => {
+export const joinEvent = async (eventId, userId, userData, paymentInfo = {}) => {
   const event = await getEventById(eventId);
   if (!event) throw new Error('Event not found');
 
@@ -147,7 +147,7 @@ export const joinEvent = async (eventId, userId, userData, bkashTransactionId = 
   }
 
   const paymentRequired = event.registrationFee > 0;
-  const paymentMethod = event.paymentMethod || (paymentRequired ? 'bkash' : null);
+  const { paymentMethod = null, transactionId = null } = paymentInfo;
 
   const participantData = {
     eventId,
@@ -157,8 +157,9 @@ export const joinEvent = async (eventId, userId, userData, bkashTransactionId = 
     userPhone: userData.phone,
     status: paymentRequired ? PARTICIPANT_STATUS.PENDING : PARTICIPANT_STATUS.APPROVED,
     paymentRequired,
-    paymentMethod,
-    bkashTransactionId: bkashTransactionId || null,
+    paymentMethod: paymentMethod || null,
+    transactionId: transactionId || null,
+    bkashTransactionId: paymentMethod === 'bkash' ? transactionId : null,
     paymentVerified: !paymentRequired,
     paymentVerifiedAt: null,
     paymentVerifiedBy: null,

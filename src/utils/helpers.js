@@ -1,4 +1,4 @@
-import { USER_ROLES, USER_STATUS, EVENT_STATUS } from '../config/constants';
+import { USER_ROLES, USER_STATUS, EVENT_STATUS, PAYMENT_METHODS } from '../config/constants';
 
 /**
  * Generate initials from a name
@@ -230,6 +230,31 @@ export const calculateProfileCompletion = (profile) => {
   });
 
   return Math.min(100, completion);
+};
+
+/**
+ * Get payment methods configured for an event (supports legacy single-method field)
+ */
+export const getEventPaymentMethods = (event) => {
+  if (Array.isArray(event?.paymentMethods) && event.paymentMethods.length > 0) {
+    return event.paymentMethods;
+  }
+  if (event?.paymentMethod && typeof event.paymentMethod === 'string') {
+    return [event.paymentMethod];
+  }
+  return [];
+};
+
+/**
+ * Get human-readable label for a payment method key
+ */
+export const getPaymentMethodLabel = (method) => {
+  const labels = {
+    [PAYMENT_METHODS.BKASH]: 'bKash',
+    [PAYMENT_METHODS.NAGAD]: 'Nagad',
+    [PAYMENT_METHODS.CASH]: 'Cash',
+  };
+  return labels[method] || method;
 };
 
 /**

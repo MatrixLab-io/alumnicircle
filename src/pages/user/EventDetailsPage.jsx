@@ -8,7 +8,7 @@ import { PageHeader } from '../../components/layout';
 import { Button, Spinner, Card, Badge } from '../../components/common';
 import { EventDetails, JoinEventModal } from '../../components/events';
 import { getEventById, joinEvent, getEventParticipants } from '../../services/event.service';
-import { getEventLiveStatus } from '../../utils/helpers';
+import { getEventLiveStatus, getEventPaymentMethods, getPaymentMethodLabel } from '../../utils/helpers';
 import { USER_ROUTES } from '../../config/routes';
 import { APP_NAME, PARTICIPANT_STATUS, PAYMENT_METHODS } from '../../config/constants';
 
@@ -50,14 +50,14 @@ export default function EventDetailsPage() {
     }
   };
 
-  const handleJoinEvent = async (bkashTransactionId) => {
+  const handleJoinEvent = async (paymentInfo) => {
     setIsJoining(true);
     try {
       await joinEvent(event.id, userProfile.uid, {
         name: userProfile.name,
         email: userProfile.email,
         phone: userProfile.phone,
-      }, bkashTransactionId);
+      }, paymentInfo || {});
 
       toast.success(
         event.registrationFee > 0
@@ -169,9 +169,11 @@ export default function EventDetailsPage() {
           <div className="flex justify-center">
             <Button size="lg" onClick={() => setShowJoinModal(true)}>
               {event.registrationFee > 0
-                ? event.paymentMethod === PAYMENT_METHODS.CASH
-                  ? 'Register (Cash)'
-                  : 'Register (Paid)'
+                ? (() => {
+                    const methods = getEventPaymentMethods(event);
+                    if (methods.length === 1) return `Register (${getPaymentMethodLabel(methods[0])})`;
+                    return 'Register (Paid)';
+                  })()
                 : 'Register for Free'}
             </Button>
           </div>

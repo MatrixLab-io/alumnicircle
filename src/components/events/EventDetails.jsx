@@ -6,7 +6,7 @@ import {
   PhoneIcon,
 } from '@heroicons/react/24/outline';
 import { Card, Badge } from '../common';
-import { formatDate, formatDateTime, formatCurrency, getEventLiveStatus } from '../../utils/helpers';
+import { formatDate, formatDateTime, formatCurrency, getEventLiveStatus, getEventPaymentMethods, getPaymentMethodLabel } from '../../utils/helpers';
 import { formatEventLocation } from '../../utils/formatters';
 import EventCountdown from './EventCountdown';
 
@@ -57,58 +57,99 @@ export default function EventDetails({ event }) {
 
       {/* Details Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <CalendarIcon className="h-6 w-6 text-primary-500 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-lg">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <CalendarIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </div>
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Date & Time</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs font-medium uppercase tracking-wider text-blue-600/70 dark:text-blue-400/70">Date & Time</p>
+            <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
               {formatDateTime(event.startDate)}
             </p>
             {event.endDate && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 to {formatDateTime(event.endDate)}
               </p>
             )}
           </div>
         </div>
 
-        <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <MapPinIcon className="h-6 w-6 text-primary-500 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 bg-red-50/50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-lg">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <MapPinIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
+          </div>
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs font-medium uppercase tracking-wider text-red-600/70 dark:text-red-400/70">Location</p>
+            <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
               {formatEventLocation(event.location)}
             </p>
           </div>
         </div>
 
-        <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <UsersIcon className="h-6 w-6 text-primary-500 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30 rounded-lg">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+            <UsersIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          </div>
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Participants</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs font-medium uppercase tracking-wider text-purple-600/70 dark:text-purple-400/70">Participants</p>
+            <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
               {event.currentParticipants || 0}
-              {event.participantLimit && ` / ${event.participantLimit}`}
+              {event.participantLimit && <span className="text-gray-500 dark:text-gray-400 font-normal"> / {event.participantLimit}</span>}
             </p>
             {spotsLeft !== null && spotsLeft > 0 && (
-              <p className="text-sm text-green-600 dark:text-green-400">
+              <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium">
                 {spotsLeft} spots left
-              </p>
+              </span>
+            )}
+            {isFull && (
+              <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-md bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium">
+                Full
+              </span>
             )}
           </div>
         </div>
 
-        <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <CurrencyDollarIcon className="h-6 w-6 text-primary-500 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-lg">
+          <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+            <CurrencyDollarIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Registration Fee</p>
-            <p className="font-medium text-gray-900 dark:text-white">
-              {isFree ? 'Free' : formatCurrency(event.registrationFee)}
-            </p>
-            {!isFree && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {event.paymentMethod === 'cash' ? 'Pay by Cash' : event.bkashNumber ? `bKash: ${event.bkashNumber}` : ''}
-              </p>
+            <p className="text-xs font-medium uppercase tracking-wider text-amber-600/70 dark:text-amber-400/70">Registration Fee</p>
+            {isFree ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm font-semibold mt-1">
+                Free
+              </span>
+            ) : (
+              <>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">
+                  {formatCurrency(event.registrationFee)}
+                </p>
+                {(() => {
+                  const methods = getEventPaymentMethods(event);
+                  if (methods.length === 0) return null;
+                  return (
+                    <div className="mt-2 space-y-1.5">
+                      <div className="flex flex-wrap gap-1.5">
+                        {methods.map((m) => (
+                          <span key={m} className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-xs font-medium">
+                            {getPaymentMethodLabel(m)}
+                          </span>
+                        ))}
+                      </div>
+                      {event.bkashNumber && methods.includes('bkash') && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">bKash:</span> {event.bkashNumber}
+                        </p>
+                      )}
+                      {event.nagadNumber && methods.includes('nagad') && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">Nagad:</span> {event.nagadNumber}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </>
             )}
           </div>
         </div>

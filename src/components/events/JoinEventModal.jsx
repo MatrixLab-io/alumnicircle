@@ -1,6 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Modal, Button, Input } from '../common';
-import { formatCurrency } from '../../utils/helpers';
+import { formatCurrency, getEventPaymentMethods, getPaymentMethodLabel } from '../../utils/helpers';
 import { validationRules } from '../../utils/validators';
 import { PAYMENT_METHODS } from '../../config/constants';
 
@@ -12,7 +13,18 @@ export default function JoinEventModal({
   isLoading,
 }) {
   const isPaid = event?.registrationFee > 0;
-  const isCash = event?.paymentMethod === PAYMENT_METHODS.CASH;
+  const methods = event ? getEventPaymentMethods(event) : [];
+
+  const [chosenMethod, setChosenMethod] = useState(null);
+
+  // Auto-select if only one method (or free event)
+  useEffect(() => {
+    if (methods.length === 1) {
+      setChosenMethod(methods[0]);
+    } else {
+      setChosenMethod(null);
+    }
+  }, [event?.id, methods.length]);
 
   const {
     register,
@@ -22,61 +34,110 @@ export default function JoinEventModal({
   } = useForm();
 
   const onSubmit = async (data) => {
-    const result = await onJoin(data.bkashTransactionId);
+    const result = await onJoin({
+      paymentMethod: chosenMethod,
+      transactionId: data.transactionId || null,
+    });
     if (result) {
       reset();
+      setChosenMethod(methods.length === 1 ? methods[0] : null);
       onClose();
     }
   };
 
   const handleCashOrFreeJoin = async () => {
-    const result = await onJoin(null);
+    const result = await onJoin({
+      paymentMethod: chosenMethod || null,
+      transactionId: null,
+    });
     if (result) {
+      setChosenMethod(methods.length === 1 ? methods[0] : null);
       onClose();
     }
   };
 
   if (!event) return null;
 
-  const isBkashPaid = isPaid && !isCash;
-  const isCashPaid = isPaid && isCash;
+  const needsTxId = chosenMethod === PAYMENT_METHODS.BKASH || chosenMethod === PAYMENT_METHODS.NAGAD;
+  const isCashChosen = chosenMethod === PAYMENT_METHODS.CASH;
+  const showMethodPicker = isPaid && methods.length > 1;
+
+  const getTitle = () => {
+    if (!isPaid) return 'Join Event';
+    if (!chosenMethod && showMethodPicker) return 'Select Payment Method';
+    if (needsTxId) return 'Payment Required';
+    if (isCashChosen) return 'Cash Payment';
+    return 'Payment Required';
+  };
+
+  const getMfsNumber = () => {
+    if (chosenMethod === PAYMENT_METHODS.BKASH) return event.bkashNumber;
+    if (chosenMethod === PAYMENT_METHODS.NAGAD) return event.nagadNumber;
+    return null;
+  };
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isBkashPaid ? 'Payment Required' : isCashPaid ? 'Cash Payment' : 'Join Event'}
+      title={getTitle()}
       size="md"
     >
-      <form onSubmit={isBkashPaid ? handleSubmit(onSubmit) : undefined}>
+      <form onSubmit={needsTxId ? handleSubmit(onSubmit) : undefined}>
         <Modal.Body>
-          {isBkashPaid ? (
+          {/* Method picker when multiple methods */}
+          {showMethodPicker && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Choose Payment Method
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {methods.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => { setChosenMethod(m); reset(); }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                      chosenMethod === m
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {getPaymentMethodLabel(m)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* MFS (bKash/Nagad) flow */}
+          {isPaid && needsTxId ? (
             <div className="space-y-4">
               <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                 <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
                   Registration Fee: {formatCurrency(event.registrationFee)}
                 </p>
                 <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  Please send the payment to the following bKash number and enter
+                  Please send the payment to the following {getPaymentMethodLabel(chosenMethod)} number and enter
                   your transaction ID below.
                 </p>
               </div>
 
               <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg text-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  bKash Number
+                  {getPaymentMethodLabel(chosenMethod)} Number
                 </p>
                 <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                  {event.bkashNumber}
+                  {getMfsNumber()}
                 </p>
               </div>
 
               <Input
-                label="bKash Transaction ID"
+                label={`${getPaymentMethodLabel(chosenMethod)} Transaction ID`}
                 placeholder="Enter your transaction ID"
-                error={errors.bkashTransactionId?.message}
+                error={errors.transactionId?.message}
                 required
-                {...register('bkashTransactionId', validationRules.bkashTransactionId)}
+                {...register('transactionId', validationRules.bkashTransactionId)}
               />
 
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -86,7 +147,7 @@ export default function JoinEventModal({
                 </p>
               </div>
             </div>
-          ) : isCashPaid ? (
+          ) : isPaid && isCashChosen ? (
             <div className="text-center py-4">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
                 <svg className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -103,7 +164,13 @@ export default function JoinEventModal({
                 You will pay in cash at the event venue. Your registration will be pending until approved by an admin.
               </p>
             </div>
-          ) : (
+          ) : isPaid && !chosenMethod && showMethodPicker ? (
+            <div className="text-center py-4">
+              <p className="text-gray-500 dark:text-gray-400">
+                Please select a payment method above to continue.
+              </p>
+            </div>
+          ) : !isPaid ? (
             <div className="text-center py-4">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -118,20 +185,24 @@ export default function JoinEventModal({
                 <strong>{event.title}</strong>.
               </p>
             </div>
-          )}
+          ) : null}
         </Modal.Body>
 
         <Modal.Footer>
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          {isBkashPaid ? (
+          {needsTxId ? (
             <Button type="submit" isLoading={isLoading}>
               Submit Payment
             </Button>
+          ) : (isPaid && !chosenMethod && showMethodPicker) ? (
+            <Button disabled>
+              Select a Method
+            </Button>
           ) : (
             <Button onClick={handleCashOrFreeJoin} isLoading={isLoading}>
-              {isCashPaid ? 'Register (Pay at Venue)' : 'Confirm Registration'}
+              {isCashChosen ? 'Register (Pay at Venue)' : 'Confirm Registration'}
             </Button>
           )}
         </Modal.Footer>

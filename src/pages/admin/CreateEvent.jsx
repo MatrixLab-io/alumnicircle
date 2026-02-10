@@ -20,7 +20,7 @@ export default function CreateEvent() {
   const [bannerFile, setBannerFile] = useState(null);
   const [isPublic, setIsPublic] = useState(true);
   const [isPaid, setIsPaid] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS.BKASH);
+  const [selectedMethods, setSelectedMethods] = useState([PAYMENT_METHODS.BKASH]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [dateErrors, setDateErrors] = useState({ startDate: '', endDate: '' });
@@ -58,6 +58,7 @@ export default function CreateEvent() {
       participantLimit: '',
       registrationFee: '',
       bkashNumber: '',
+      nagadNumber: '',
     },
   });
 
@@ -92,9 +93,19 @@ export default function CreateEvent() {
     return !errs.startDate && !errs.endDate;
   };
 
+  const toggleMethod = (method) => {
+    setSelectedMethods((prev) =>
+      prev.includes(method) ? prev.filter((m) => m !== method) : [...prev, method]
+    );
+  };
+
   const onSubmit = async (data) => {
     if (!validateDates()) return;
     if (!validateContactPersons()) return;
+    if (isPaid && selectedMethods.length === 0) {
+      toast.error('Select at least one payment method');
+      return;
+    }
     setIsLoading(true);
     try {
       // Create event first
@@ -111,8 +122,10 @@ export default function CreateEvent() {
         endDate: endDate || null,
         participantLimit: data.participantLimit ? parseInt(data.participantLimit) : null,
         registrationFee: isPaid ? parseFloat(data.registrationFee) : 0,
-        paymentMethod: isPaid ? paymentMethod : null,
-        bkashNumber: isPaid && paymentMethod === PAYMENT_METHODS.BKASH ? data.bkashNumber : null,
+        paymentMethods: isPaid ? [...selectedMethods] : [],
+        paymentMethod: null,
+        bkashNumber: isPaid && selectedMethods.includes(PAYMENT_METHODS.BKASH) ? data.bkashNumber : null,
+        nagadNumber: isPaid && selectedMethods.includes(PAYMENT_METHODS.NAGAD) ? data.nagadNumber : null,
         isPublic,
         banner: null,
         contactPersons: contactPersons.filter((cp) => cp.name && cp.phone),
@@ -293,30 +306,32 @@ export default function CreateEvent() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Payment Method
+                    Payment Methods
                   </label>
-                  <div className="flex gap-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Select one or more accepted payment methods</p>
+                  <div className="flex flex-wrap gap-2">
                     {[
                       { value: PAYMENT_METHODS.BKASH, label: 'bKash' },
-                      { value: PAYMENT_METHODS.CASH, label: 'By Cash' },
+                      { value: PAYMENT_METHODS.NAGAD, label: 'Nagad' },
+                      { value: PAYMENT_METHODS.CASH, label: 'Cash' },
                     ].map((opt) => (
                       <button
                         key={opt.value}
                         type="button"
-                        onClick={() => setPaymentMethod(opt.value)}
+                        onClick={() => toggleMethod(opt.value)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                          paymentMethod === opt.value
+                          selectedMethods.includes(opt.value)
                             ? 'bg-primary-600 text-white'
                             : 'bg-white/50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
-                        {opt.label}
+                        {selectedMethods.includes(opt.value) ? '✓ ' : ''}{opt.label}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {paymentMethod === PAYMENT_METHODS.BKASH && (
+                {selectedMethods.includes(PAYMENT_METHODS.BKASH) && (
                   <Input
                     label="bKash Number"
                     type="tel"
@@ -324,13 +339,27 @@ export default function CreateEvent() {
                     error={errors.bkashNumber?.message}
                     required
                     {...register('bkashNumber', {
-                      required: isPaid && paymentMethod === PAYMENT_METHODS.BKASH ? 'bKash number is required' : false,
-                      validate: (value) => !isPaid || paymentMethod !== PAYMENT_METHODS.BKASH || !value || isValidPhone(value) || 'Enter a valid BD phone number (01[3-9]XXXXXXXX)',
+                      required: isPaid && selectedMethods.includes(PAYMENT_METHODS.BKASH) ? 'bKash number is required' : false,
+                      validate: (value) => !isPaid || !selectedMethods.includes(PAYMENT_METHODS.BKASH) || !value || isValidPhone(value) || 'Enter a valid BD phone number (01[3-9]XXXXXXXX)',
                     })}
                   />
                 )}
 
-                {paymentMethod === PAYMENT_METHODS.CASH && (
+                {selectedMethods.includes(PAYMENT_METHODS.NAGAD) && (
+                  <Input
+                    label="Nagad Number"
+                    type="tel"
+                    placeholder="01XXXXXXXXX"
+                    error={errors.nagadNumber?.message}
+                    required
+                    {...register('nagadNumber', {
+                      required: isPaid && selectedMethods.includes(PAYMENT_METHODS.NAGAD) ? 'Nagad number is required' : false,
+                      validate: (value) => !isPaid || !selectedMethods.includes(PAYMENT_METHODS.NAGAD) || !value || isValidPhone(value) || 'Enter a valid BD phone number (01[3-9]XXXXXXXX)',
+                    })}
+                  />
+                )}
+
+                {selectedMethods.includes(PAYMENT_METHODS.CASH) && (
                   <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                     <p className="text-sm text-green-700 dark:text-green-300">
                       Participants will pay in cash at the event venue. Admin approval will still be required.

@@ -9,6 +9,8 @@ import {
   TrashIcon,
   ArchiveBoxIcon,
   ArrowPathIcon,
+  MapPinIcon,
+  CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -146,10 +148,14 @@ export default function ManageEvents() {
         />
       ) : (
         <div className="space-y-4">
-          {events.map((event) => (
+          {events.map((event) => {
+            const ls = getEventLiveStatus(event);
+            const isFree = !event.registrationFee || event.registrationFee === 0;
+            return (
             <Card key={event.id}>
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="flex items-start gap-4">
+              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                {/* Left: banner + info */}
+                <div className="flex items-start gap-4 min-w-0 flex-1">
                   {event.banner ? (
                     <img
                       src={event.banner}
@@ -162,35 +168,61 @@ export default function ManageEvents() {
                     </div>
                   )}
 
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
+                    {/* Title + status */}
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                      <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                         {event.title}
                       </h3>
                       {renderStatusBadge(event)}
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1 mb-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1 mb-3">
                       {event.description}
                     </p>
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
-                      <span>{formatDate(event.startDate)}</span>
-                      <span>{formatEventLocation(event.location)}</span>
-                      <span>
-                        {event.currentParticipants || 0}
-                        {event.participantLimit && ` / ${event.participantLimit}`} participants
-                      </span>
-                      <span>
-                        {event.registrationFee > 0
-                          ? formatCurrency(event.registrationFee)
-                          : 'Free'}
-                      </span>
-                      {getEventLiveStatus(event).status === 'upcoming' && (
+
+                    {/* Detail chips */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Date chip */}
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                        <CalendarIcon className="h-3.5 w-3.5 text-blue-500" />
+                        <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{formatDate(event.startDate)}</span>
+                      </div>
+
+                      {/* Location chip */}
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 max-w-[260px]">
+                        <MapPinIcon className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                        <span className="text-xs text-red-700 dark:text-red-300 truncate">{formatEventLocation(event.location)}</span>
+                      </div>
+
+                      {/* Participants chip */}
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                        <UsersIcon className="h-3.5 w-3.5 text-purple-500" />
+                        <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                          {event.currentParticipants || 0}{event.participantLimit ? ` / ${event.participantLimit}` : ''}
+                        </span>
+                      </div>
+
+                      {/* Price chip */}
+                      {isFree ? (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                          <span className="text-xs font-semibold text-green-700 dark:text-green-300">Free</span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                          <CurrencyDollarIcon className="h-3.5 w-3.5 text-amber-500" />
+                          <span className="text-xs font-bold text-amber-700 dark:text-amber-300">{formatCurrency(event.registrationFee)}</span>
+                        </div>
+                      )}
+
+                      {/* Countdown chip */}
+                      {ls.status === 'upcoming' && (
                         <EventCountdown startDate={event.startDate} compact />
                       )}
                     </div>
                   </div>
                 </div>
 
+                {/* Right: actions */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Link to={getEventParticipantsRoute(event.id)}>
                     <Button size="sm" variant="outline">
@@ -233,7 +265,8 @@ export default function ManageEvents() {
                 </div>
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </>

@@ -20,6 +20,7 @@ import {
   rejectParticipant,
 } from '../../services/event.service';
 import { exportToExcel, formatParticipantsForExport } from '../../utils/exportUtils';
+import { generateInvoicePDF } from '../../utils/pdfUtils';
 import { formatDate } from '../../utils/helpers';
 import { ADMIN_ROUTES } from '../../config/routes';
 import { APP_NAME, PARTICIPANT_STATUS } from '../../config/constants';
@@ -85,7 +86,11 @@ export default function EventParticipants() {
     setProcessingId(participantId);
     try {
       await approveParticipant(participantId, userProfile.uid);
-      toast.success('Participant approved');
+      const participant = participants.find((p) => p.id === participantId);
+      if (event && participant) {
+        generateInvoicePDF(event, participant);
+      }
+      toast.success('Participant approved — Invoice downloaded');
       setParticipants((prev) =>
         prev.map((p) =>
           p.id === participantId ? { ...p, status: PARTICIPANT_STATUS.APPROVED, paymentVerified: true } : p
@@ -262,15 +267,15 @@ export default function EventParticipants() {
                       )}
                       {participant.paymentRequired && (
                         <Badge variant="gray">
-                          {participant.paymentMethod === 'cash' ? 'Cash' : 'bKash'}
+                          {participant.paymentMethod === 'nagad' ? 'Nagad' : participant.paymentMethod === 'cash' ? 'Cash' : 'bKash'}
                         </Badge>
                       )}
                     </div>
-                    {participant.bkashTransactionId && (
+                    {(participant.transactionId || participant.bkashTransactionId) && (
                       <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                         <span className="text-xs font-medium text-amber-700 dark:text-amber-300">TxID:</span>
                         <span className="font-mono text-sm font-bold text-amber-900 dark:text-amber-100 tracking-wider select-all">
-                          {participant.bkashTransactionId}
+                          {participant.transactionId || participant.bkashTransactionId}
                         </span>
                       </div>
                     )}
