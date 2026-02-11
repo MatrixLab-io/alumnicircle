@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ClockIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, Button } from '../../components/common';
 import { PUBLIC_ROUTES, USER_ROUTES } from '../../config/routes';
@@ -9,7 +10,15 @@ import { APP_NAME } from '../../config/constants';
 
 export default function PendingApproval() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { userProfile, logout, refreshProfile, isApproved } = useAuth();
+
+  // Show success message if coming from email verification
+  useEffect(() => {
+    if (location.state?.fromVerification) {
+      toast.success('Email verified successfully! Waiting for admin approval.');
+    }
+  }, [location]);
 
   // If approved, redirect to dashboard
   useEffect(() => {

@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { uploadImage } from './cloudinary.service';
+import { sendApprovalEmail } from './email.service';
 import { COLLECTIONS, USER_STATUS, ITEMS_PER_PAGE } from '../config/constants';
 import { calculateProfileCompletion } from '../utils/helpers';
 
@@ -133,12 +134,33 @@ export const getPendingUsers = async () => {
  * Approve user
  */
 export const approveUser = async (uid, adminUid) => {
+  // Get user details before approval
+  const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, uid));
+  const userData = userDoc.data();
+
+  // Update user status
   await updateDoc(doc(db, COLLECTIONS.USERS, uid), {
     status: USER_STATUS.APPROVED,
     approvedAt: serverTimestamp(),
     approvedBy: adminUid,
     updatedAt: serverTimestamp(),
   });
+
+  // Send approval email
+  if (userData?.email && userData?.name) {
+    try {
+      const emailSent = await sendApprovalEmail(userData.email, userData.name);
+      if (emailSent) {
+        console.log('✅ Approval email sent to:', userData.email);
+      } else {
+        console.log('⚠️ Approval email not sent (EmailJS not configured or error occurred)');
+      }
+    } catch (error) {
+      console.error('❌ Failed to send approval email:', error);
+      // Don't fail the approval if email fails
+    }
+  }
+
   return { success: true };
 };
 

@@ -23,6 +23,7 @@ import Register from './pages/auth/Register';
 import VerifyEmail from './pages/auth/VerifyEmail';
 import PendingApproval from './pages/auth/PendingApproval';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import EmailAction from './pages/auth/EmailAction';
 
 // User Pages
 import Dashboard from './pages/user/Dashboard';
@@ -69,6 +70,9 @@ export default function App() {
                 {/* Public Routes */}
                 <Route path={PUBLIC_ROUTES.HOME} element={<Landing />} />
                 <Route path={PUBLIC_ROUTES.PUBLIC_EVENT} element={<PublicEvent />} />
+
+                {/* Email Action Handler (verification, password reset, etc.) */}
+                <Route path="/auth/action" element={<EmailAction />} />
 
                 {/* Auth Routes (only for non-authenticated users) */}
                 <Route element={<AuthLayout />}>

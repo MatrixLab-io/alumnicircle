@@ -11,10 +11,11 @@ import {
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../config/firebase';
 import { USER_ROLES, USER_STATUS, VISIBILITY, COLLECTIONS } from '../config/constants';
+import { getErrorMessage, logError } from '../utils/errorMessages';
 
 const actionCodeSettings = {
-  url: import.meta.env.VITE_APP_URL + '/login?verified=true',
-  handleCodeInApp: false,
+  url: (import.meta.env.VITE_APP_URL || 'http://localhost:5173') + '/auth/action',
+  handleCodeInApp: true,
 };
 
 const AuthContext = createContext(null);
@@ -100,8 +101,10 @@ export function AuthProvider({ children }) {
 
       return { success: true, user: result.user };
     } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
+      logError('Register', err);
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -131,8 +134,10 @@ export function AuthProvider({ children }) {
 
       return { success: true, user: result.user, isNewUser: !existingProfile };
     } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
+      logError('Google Sign-In', err);
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -150,8 +155,10 @@ export function AuthProvider({ children }) {
       await fetchUserProfile(result.user.uid);
       return { success: true, user: result.user };
     } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
+      logError('Login', err);
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -170,12 +177,14 @@ export function AuthProvider({ children }) {
 
   // Send verification email
   const resendVerificationEmail = async () => {
-    if (!user) return { success: false, error: 'No user logged in' };
+    if (!user) return { success: false, error: 'Please sign in to resend verification email.' };
     try {
       await sendEmailVerification(user, actionCodeSettings);
       return { success: true };
     } catch (err) {
-      return { success: false, error: err.message };
+      logError('Resend Verification', err);
+      const errorMessage = getErrorMessage(err);
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -185,7 +194,9 @@ export function AuthProvider({ children }) {
       await sendPasswordResetEmail(auth, email);
       return { success: true };
     } catch (err) {
-      return { success: false, error: err.message };
+      logError('Password Reset', err);
+      const errorMessage = getErrorMessage(err);
+      return { success: false, error: errorMessage };
     }
   };
 
