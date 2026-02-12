@@ -58,7 +58,6 @@ export default function EventParticipants() {
       setEvent(eventData);
       setParticipants(participantData);
     } catch (error) {
-      console.error('Error fetching data:', error);
       toast.error('Failed to load event data');
     } finally {
       setLoading(false);
@@ -190,7 +189,7 @@ export default function EventParticipants() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card padding="sm" className="text-center">
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {participants.length}
@@ -216,7 +215,7 @@ export default function EventParticipants() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         {['all', PARTICIPANT_STATUS.PENDING, PARTICIPANT_STATUS.APPROVED, PARTICIPANT_STATUS.REJECTED].map(
           (f) => (
             <button
@@ -272,9 +271,9 @@ export default function EventParticipants() {
                       )}
                     </div>
                     {(participant.transactionId || participant.bkashTransactionId) && (
-                      <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                        <span className="text-xs font-medium text-amber-700 dark:text-amber-300">TxID:</span>
-                        <span className="font-mono text-sm font-bold text-amber-900 dark:text-amber-100 tracking-wider select-all">
+                      <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg max-w-full">
+                        <span className="text-xs font-medium text-amber-700 dark:text-amber-300 flex-shrink-0">TxID:</span>
+                        <span className="font-mono text-sm font-bold text-amber-900 dark:text-amber-100 tracking-wider select-all truncate">
                           {participant.transactionId || participant.bkashTransactionId}
                         </span>
                       </div>

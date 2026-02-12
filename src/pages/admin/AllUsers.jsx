@@ -33,7 +33,7 @@ export default function AllUsers() {
       const result = await getAllUsers({ status, pageSize: 100 });
       setUsers(result.users);
     } catch (error) {
-      console.error('Error fetching users:', error);
+
     } finally {
       setLoading(false);
     }

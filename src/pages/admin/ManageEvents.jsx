@@ -50,7 +50,6 @@ export default function ManageEvents() {
       const result = await getAllEvents({ includeCompleted: true });
       setEvents(result);
     } catch (error) {
-      console.error('Error fetching events:', error);
       toast.error('Failed to load events');
     } finally {
       setLoading(false);
@@ -192,7 +191,7 @@ export default function ManageEvents() {
                       </div>
 
                       {/* Location chip */}
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 max-w-[260px]">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 max-w-[200px] sm:max-w-[260px]">
                         <MapPinIcon className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
                         <span className="text-xs text-red-700 dark:text-red-300 truncate">{formatEventLocation(event.location)}</span>
                       </div>

@@ -29,7 +29,7 @@ export default function MyEvents() {
       const result = await getUserEvents(userProfile.uid);
       setParticipations(result);
     } catch (error) {
-      console.error('Error fetching user events:', error);
+      // silently handled
     } finally {
       setLoading(false);
     }

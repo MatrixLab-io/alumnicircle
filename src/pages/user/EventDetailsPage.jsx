@@ -43,7 +43,6 @@ export default function EventDetailsPage() {
       const userPart = participants.find((p) => p.userId === userProfile?.uid);
       setUserParticipation(userPart);
     } catch (error) {
-      console.error('Error fetching event:', error);
       toast.error('Failed to load event');
     } finally {
       setLoading(false);

@@ -78,7 +78,6 @@ export default function EmailAction() {
 
       // If already in success state, ignore the error (caused by double-mount)
       if (status === 'success') {
-        console.log('Ignoring error - already verified');
         return;
       }
 

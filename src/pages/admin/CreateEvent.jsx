@@ -142,7 +142,6 @@ export default function CreateEvent() {
       toast.success('Event created successfully');
       navigate(ADMIN_ROUTES.MANAGE_EVENTS);
     } catch (error) {
-      console.error('Error creating event:', error);
       toast.error('Failed to create event');
     } finally {
       setIsLoading(false);
@@ -395,7 +394,7 @@ export default function CreateEvent() {
           <div className="space-y-3">
             {contactPersons.map((cp, index) => (
               <div key={index}>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <div className="flex-1">
                     <input
                       type="text"
@@ -418,7 +417,7 @@ export default function CreateEvent() {
                     <button
                       type="button"
                       onClick={() => removeContactPerson(index)}
-                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
+                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer self-start sm:self-center"
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>

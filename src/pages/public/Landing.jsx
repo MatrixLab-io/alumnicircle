@@ -22,7 +22,7 @@ export default function Landing() {
         const publicEvents = await getPublicEvents();
         setEvents(publicEvents.slice(0, 6)); // Show only first 6
       } catch (error) {
-        console.error('Error fetching events:', error);
+
       } finally {
         setLoading(false);
       }
@@ -46,17 +46,17 @@ export default function Landing() {
                 {APP_NAME}
               </span>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <ThemeToggle />
               <Link
                 to={PUBLIC_ROUTES.LOGIN}
-                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium"
+                className="hidden sm:block text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium"
               >
                 Sign In
               </Link>
               <Link
                 to={PUBLIC_ROUTES.REGISTER}
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-500 hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] text-white font-medium rounded-lg transition-all duration-300 cursor-pointer"
+                className="px-3 sm:px-4 py-2 bg-primary-600 hover:bg-primary-500 hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] text-white font-medium rounded-lg transition-all duration-300 cursor-pointer text-sm sm:text-base"
               >
                 Join Now
               </Link>

@@ -28,7 +28,7 @@ export default function Events() {
       });
       setEvents(result);
     } catch (error) {
-      console.error('Error fetching events:', error);
+      // silently handled
     } finally {
       setLoading(false);
     }

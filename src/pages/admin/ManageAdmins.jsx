@@ -40,7 +40,6 @@ export default function ManageAdmins() {
       setAdmins(adminUsers);
       setAllUsers(regularUsers);
     } catch (error) {
-      console.error('Error fetching users:', error);
       toast.error('Failed to load users');
     } finally {
       setLoading(false);

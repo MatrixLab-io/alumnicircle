@@ -29,7 +29,6 @@ export default function ArchivedEvents() {
       const result = await getArchivedEvents();
       setArchivedEvents(result);
     } catch (error) {
-      console.error('Error fetching archived events:', error);
       toast.error('Failed to load archived events');
     } finally {
       setLoading(false);
@@ -104,7 +103,7 @@ export default function ArchivedEvents() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => handleExcelDownload(item)}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"

@@ -34,7 +34,6 @@ export default function UserApprovals() {
       const result = await getPendingUsers();
       setUsers(result);
     } catch (error) {
-      console.error('Error fetching pending users:', error);
       toast.error('Failed to load pending users');
     } finally {
       setLoading(false);

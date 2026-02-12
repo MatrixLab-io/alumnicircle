@@ -20,7 +20,7 @@ export default function PendingApproval() {
       // Clear state to prevent duplicate toast on re-render
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, []);
+  }, [location.state, navigate, location.pathname]);
 
   // If approved, redirect to dashboard
   useEffect(() => {

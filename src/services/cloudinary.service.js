@@ -32,5 +32,4 @@ export const uploadImage = async (file, folder = 'general') => {
 export const deleteImage = async (imageUrl) => {
   // For unsigned uploads, we can't delete from client-side.
   // This is acceptable for a small app - orphaned images use minimal storage.
-  console.warn('Image deletion requires server-side implementation');
 };

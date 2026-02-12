@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
       }
       return null;
     } catch (err) {
-      console.error('Error fetching user profile:', err);
+      // Profile fetch failed silently
       return null;
     }
   };
@@ -237,7 +237,7 @@ export function AuthProvider({ children }) {
         lastLoginAt: serverTimestamp(),
       });
 
-      return { success: true, user: result.user };
+      return { success: true, user: result.user, profile };
     } catch (err) {
       logError('Login', err);
       const errorMessage = getErrorMessage(err);

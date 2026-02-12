@@ -37,7 +37,7 @@ export default function AdminDashboard() {
       setEventStats(events);
       setPendingUsers(pending.slice(0, 5));
     } catch (error) {
-      console.error('Error fetching admin data:', error);
+
     } finally {
       setLoading(false);
     }

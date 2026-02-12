@@ -40,7 +40,7 @@ export default function Directory() {
       });
       setMembers(result.users);
     } catch (error) {
-      console.error('Error fetching members:', error);
+      // silently handled
     } finally {
       setLoading(false);
     }

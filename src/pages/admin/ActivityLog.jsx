@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   ArrowPathIcon,
@@ -104,20 +104,17 @@ export default function ActivityLog() {
   const [hasMore, setHasMore] = useState(false);
   const [filterGroup, setFilterGroup] = useState('');
 
-  const fetchLogs = useCallback(async (append = false) => {
+  const fetchLogs = async (append = false, cursor = null) => {
     if (append) {
       setLoadingMore(true);
     } else {
       setLoading(true);
-      setLastDoc(null);
     }
 
     try {
-      // If filtering by group, fetch all types in that group
-      // For simplicity, we fetch without type filter and filter client-side for groups
       const result = await getActivityLogs({
         pageSize: 25,
-        lastDoc: append ? lastDoc : null,
+        lastDoc: append ? cursor : null,
       });
 
       if (append) {
@@ -128,13 +125,12 @@ export default function ActivityLog() {
       setLastDoc(result.lastDoc);
       setHasMore(result.hasMore);
     } catch (error) {
-      console.error('Error fetching activity logs:', error);
       toast.error('Failed to load activity logs');
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [lastDoc]);
+  };
 
   useEffect(() => {
     fetchLogs();
@@ -143,7 +139,7 @@ export default function ActivityLog() {
   const handleRefresh = async () => {
     setRefreshing(true);
     setFilterGroup('');
-    await fetchLogs();
+    await fetchLogs(false, null);
     setRefreshing(false);
     toast.success('Data refreshed');
   };
@@ -183,7 +179,7 @@ export default function ActivityLog() {
       />
 
       {/* Filter Bar */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         {FILTER_OPTIONS.map((opt) => (
           <button
             key={opt.value}
@@ -262,7 +258,7 @@ export default function ActivityLog() {
             <div className="flex justify-center pt-4">
               <Button
                 variant="outline"
-                onClick={() => fetchLogs(true)}
+                onClick={() => fetchLogs(true, lastDoc)}
                 isLoading={loadingMore}
               >
                 Load More

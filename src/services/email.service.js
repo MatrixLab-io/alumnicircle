@@ -38,7 +38,7 @@ export const generateApprovalEmailHTML = (userName, loginUrl) => {
           <tr>
             <td style="background: linear-gradient(135deg, #6b21a8 0%, #9333ea 100%); padding: 40px 30px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold; letter-spacing: -0.5px;">
-                🎉 Welcome to AlumniCircle!
+                Welcome to AlumniCircle!
               </h1>
             </td>
           </tr>
@@ -115,13 +115,6 @@ export const sendApprovalEmail = async (userEmail, userName) => {
 
   // Check if email service is configured
   if (!serviceId || !templateId || !publicKey) {
-    console.group('📧 Approval Email (Email service not configured)');
-    console.log('To:', userEmail);
-    console.log('Name:', userName);
-    console.log('Subject: Account Approved - AlumniCircle');
-    console.log('Login URL:', `${import.meta.env.VITE_APP_URL || 'http://localhost:5173'}/login`);
-    console.log('\nTo enable email sending, see EMAIL_SERVICE_SETUP.md');
-    console.groupEnd();
     return false;
   }
 
@@ -139,56 +132,9 @@ export const sendApprovalEmail = async (userEmail, userName) => {
       app_url: import.meta.env.VITE_APP_URL || 'http://localhost:5173',
     };
 
-    console.group('📧 Sending Approval Email');
-    console.log('To:', userEmail);
-    console.log('Service ID:', serviceId);
-    console.log('Template ID:', templateId);
-    console.log('Template Params:', templateParams);
-    console.groupEnd();
-
     await emailjs.default.send(serviceId, templateId, templateParams, publicKey);
-    console.log('✅ Approval email sent successfully to:', userEmail);
     return true;
   } catch (error) {
-    console.group('❌ Email Service Error');
-
-    // If email package isn't installed
-    if (error.message?.includes('Cannot find module') || error.message?.includes('@emailjs')) {
-      console.log('Email service package not installed.');
-      console.log('See EMAIL_SERVICE_SETUP.md for setup instructions');
-    } else if (error.status === 422) {
-      console.error('422 Error - Invalid email request');
-      console.log('\nCommon causes:');
-      console.log('1. Template ID or Service ID is incorrect');
-      console.log('2. Template variables mismatch');
-      console.log('3. Email service not properly configured');
-      console.log('\nSteps to fix:');
-      console.log('1. Check your email service dashboard');
-      console.log('2. Verify Service ID and Template ID');
-      console.log('3. Ensure email service is connected');
-      console.log('4. Check template variables: to_email, to_name, user_name, login_url, app_url');
-      console.log('5. Verify you haven\'t exceeded email sending limits');
-      console.log('\nError details:', error);
-    } else {
-      console.error('Unexpected error:', error);
-      console.log('Error status:', error.status);
-      console.log('Error text:', error.text);
-    }
-
-    console.log('\nSee EMAIL_SERVICE_SETUP.md for full setup instructions');
-    console.groupEnd();
     return false;
   }
-};
-
-/**
- * Log email details for manual sending or debugging
- * This is used as a fallback when email service is not configured
- */
-export const logEmailDetails = (to, subject, body) => {
-  console.group('📧 Email to be sent');
-  console.log('To:', to);
-  console.log('Subject:', subject);
-  console.log('Body:', body);
-  console.groupEnd();
 };

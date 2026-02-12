@@ -149,17 +149,11 @@ export const approveUser = async (uid, adminInfo = {}) => {
     updatedAt: serverTimestamp(),
   });
 
-  // Send approval email
+  // Send approval email (fire-and-forget, don't fail the approval if email fails)
   if (userData?.email && userData?.name) {
     try {
-      const emailSent = await sendApprovalEmail(userData.email, userData.name);
-      if (emailSent) {
-        console.log('✅ Approval email sent to:', userData.email);
-      } else {
-        console.log('⚠️ Approval email not sent (EmailJS not configured or error occurred)');
-      }
-    } catch (error) {
-      console.error('❌ Failed to send approval email:', error);
+      await sendApprovalEmail(userData.email, userData.name);
+    } catch (_) {
       // Don't fail the approval if email fails
     }
   }

@@ -94,7 +94,6 @@ export default function EditEvent() {
         setContactPersons(event.contactPersons);
       }
     } catch (error) {
-      console.error('Error fetching event:', error);
       toast.error('Failed to load event');
       navigate(ADMIN_ROUTES.MANAGE_EVENTS);
     } finally {
@@ -194,7 +193,6 @@ export default function EditEvent() {
       toast.success('Event updated successfully');
       navigate(ADMIN_ROUTES.MANAGE_EVENTS);
     } catch (error) {
-      console.error('Error updating event:', error);
       toast.error('Failed to update event');
     } finally {
       setIsSubmitting(false);

@@ -39,7 +39,7 @@ export default function Dashboard() {
       setUpcomingEvents(activeEvents.slice(0, 3));
       setRegisteredEventIds(new Set(myEvents.map((e) => e.eventId)));
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      // silently handled
     } finally {
       setLoading(false);
     }

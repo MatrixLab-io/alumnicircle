@@ -40,7 +40,6 @@ export default function PublicEvent() {
       }
       setEvent(eventData);
     } catch (err) {
-      console.error('Error fetching event:', err);
       setError('Failed to load event');
     } finally {
       setLoading(false);
