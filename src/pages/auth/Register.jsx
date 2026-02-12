@@ -7,7 +7,7 @@ export default function Register() {
     <>
       <Helmet>
         <title>Register | {APP_NAME}</title>
-        <meta name="description" content="Join AlumniCircle - School Batch 2003 Alumni Network" />
+        <meta name="description" content="Join AlumniCircle - Adarsha School Batch 2003 Alumni Network" />
       </Helmet>
       <RegisterForm />
     </>

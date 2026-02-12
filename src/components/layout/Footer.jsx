@@ -42,9 +42,12 @@ export default function Footer() {
         </div>
 
         {/* Batch info */}
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800 text-center">
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800 text-center space-y-1">
           <p className="text-sm text-gray-400 dark:text-gray-500">
-            Proudly connecting School Batch 2003 alumni
+            Proudly connecting Adarsha School Batch 2003 alumni
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-600">
+            Developed by MatrixLab
           </p>
         </div>
       </div>

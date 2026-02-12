@@ -155,7 +155,7 @@ export default function RegisterForm() {
           Join AlumniCircle
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-2">
-          Connect with your Batch 2003 classmates
+          Connect with your Adarsha School Batch 2003 classmates
         </p>
       </div>
 

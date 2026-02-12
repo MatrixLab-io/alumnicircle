@@ -37,7 +37,7 @@ export default function MemberModal({ member, isOpen, onClose, isAdmin = false }
             {member.bloodGroup && (
               <Badge variant="red">{member.bloodGroup}</Badge>
             )}
-            <Badge variant="blue">Batch 2003</Badge>
+            <Badge variant="blue">Adarsha School - Batch 2003</Badge>
           </div>
         </div>
 

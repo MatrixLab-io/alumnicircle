@@ -69,7 +69,7 @@ export default function Landing() {
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <Badge variant="blue" className="mb-6">
-            School Batch 2003
+            Adarsha School - Batch 2003
           </Badge>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
             Reconnect with Your{' '}
@@ -231,7 +231,7 @@ export default function Landing() {
                 Ready to Reconnect?
               </h2>
               <p className="text-primary-100 mb-8 max-w-xl mx-auto">
-                Join hundreds of batch 2003 alumni who are already connected. Registration is free and takes less than a minute.
+                Join hundreds of Adarsha School Batch 2003 alumni who are already connected. Registration is free and takes less than a minute.
               </p>
               <Link to={PUBLIC_ROUTES.REGISTER}>
                 <Button variant="glass" size="lg" className="text-white border-white/30">
@@ -247,7 +247,7 @@ export default function Landing() {
       <footer className="py-8 px-4 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-6xl mx-auto text-center">
           <p className="text-gray-500 dark:text-gray-400">
-            {new Date().getFullYear()} {APP_NAME}. School Batch 2003 Alumni Network.
+            {new Date().getFullYear()} {APP_NAME}. Adarsha School Batch 2003. Developed by MatrixLab.
           </p>
         </div>
       </footer>

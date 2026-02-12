@@ -28,9 +28,12 @@ export default function AuthLayout({ children }) {
       </main>
 
       {/* Footer */}
-      <footer className="py-6 text-center">
+      <footer className="py-6 text-center space-y-1">
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          School Batch 2003 Alumni Network
+          Adarsha School Batch 2003 Alumni Network
+        </p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          Developed by MatrixLab
         </p>
       </footer>
     </div>

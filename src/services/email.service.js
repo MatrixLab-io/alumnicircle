@@ -86,7 +86,7 @@ export const generateApprovalEmailHTML = (userName, loginUrl) => {
                 AlumniCircle
               </p>
               <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px;">
-                School Batch 2003 Directory
+                Adarsha School - Batch 2003 Directory
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px;">
                 © 2026 AlumniCircle. All rights reserved.

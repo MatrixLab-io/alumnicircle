@@ -84,7 +84,7 @@ export default function PendingApproval() {
 
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg mb-6">
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                This helps us ensure that only Batch 2003 alumni can access the directory.
+                This helps us ensure that only Adarsha School Batch 2003 alumni can access the directory.
                 You'll receive an email once your account is approved.
               </p>
             </div>

@@ -61,7 +61,7 @@ export default function ProfileCard({ user, isOwnProfile = false, isAdmin = fals
               Blood: {user.bloodGroup}
             </Badge>
           )}
-          <Badge variant="blue">Batch 2003</Badge>
+          <Badge variant="blue">Adarsha School - Batch 2003</Badge>
           {user.role !== 'user' && (
             <Badge variant="purple">
               {user.role === 'super_admin' ? 'Super Admin' : 'Admin'}
