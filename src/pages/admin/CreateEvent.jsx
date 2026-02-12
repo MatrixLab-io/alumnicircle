@@ -131,7 +131,7 @@ export default function CreateEvent() {
         contactPersons: contactPersons.filter((cp) => cp.name && cp.phone),
       };
 
-      const result = await createEvent(eventData, userProfile.uid);
+      const result = await createEvent(eventData, { uid: userProfile.uid, name: userProfile.name, email: userProfile.email });
 
       // Upload banner if exists
       if (bannerFile) {

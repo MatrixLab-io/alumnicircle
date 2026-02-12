@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { ExclamationTriangleIcon, UserPlusIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, Button, Input } from '../common';
@@ -12,9 +13,15 @@ import { PUBLIC_ROUTES, USER_ROUTES, ADMIN_ROUTES } from '../../config/routes';
 export default function LoginForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { loginWithEmail, signInWithGoogle, userProfile, isAdmin, isApproved, isPending, isEmailVerified } = useAuth();
+  const { loginWithEmail, signInWithGoogle, requestReapproval, userProfile, isAdmin, isApproved, isPending, isEmailVerified } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isReapproving, setIsReapproving] = useState(false);
+
+  // 'accountRemoved' = email/password user deleted by admin
+  // 'noProfile' = Google user with no Firestore profile (could be new or deleted)
+  const [blockedState, setBlockedState] = useState(null);
+  const lastCredentials = useRef(null);
 
   // Show success toast if redirected from email verification
   useEffect(() => {
@@ -54,9 +61,14 @@ export default function LoginForm() {
     const result = await loginWithEmail(data.email, data.password);
     setIsLoading(false);
 
+    if (result.accountRemoved) {
+      lastCredentials.current = { email: data.email, password: data.password };
+      setBlockedState('accountRemoved');
+      return;
+    }
+
     if (result.success) {
       toast.success('Welcome back!');
-      // Wait for profile to be fetched then redirect
       setTimeout(() => handleRedirect(result.user), 500);
     } else {
       toast.error(result.error || 'Login failed. Please check your credentials.');
@@ -67,6 +79,12 @@ export default function LoginForm() {
     setIsGoogleLoading(true);
     const result = await signInWithGoogle();
     setIsGoogleLoading(false);
+
+    if (result.noProfile) {
+      lastCredentials.current = { google: true };
+      setBlockedState('noProfile');
+      return;
+    }
 
     if (result.success) {
       if (result.isNewUser) {
@@ -80,6 +98,104 @@ export default function LoginForm() {
       toast.error(result.error || 'Google sign-in failed. Please try again.');
     }
   };
+
+  const handleRequestReapproval = async () => {
+    setIsReapproving(true);
+    const { email, password } = lastCredentials.current;
+    const result = await requestReapproval(email, password);
+    setIsReapproving(false);
+
+    if (result.success) {
+      toast.success('Re-approval request submitted!');
+      navigate(PUBLIC_ROUTES.PENDING_APPROVAL, { state: { reactivated: true } });
+    } else {
+      toast.error(result.error || 'Failed to submit request. Please try again.');
+    }
+  };
+
+  const handleBackToSignIn = () => {
+    setBlockedState(null);
+    lastCredentials.current = null;
+  };
+
+  // Email/password: Account removed by admin
+  if (blockedState === 'accountRemoved') {
+    return (
+      <Card className="w-full">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <ExclamationTriangleIcon className="h-8 w-8 text-red-600 dark:text-red-400" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Account Removed
+          </h1>
+
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
+            Your account has been removed by an administrator.
+            If you believe this was a mistake, you can request re-approval below.
+          </p>
+
+          <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg mb-6 border border-amber-200 dark:border-amber-800">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              Requesting re-approval will submit your account for admin review.
+              You won't be able to access the app until an administrator approves your account.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              fullWidth
+              onClick={handleRequestReapproval}
+              isLoading={isReapproving}
+            >
+              Request Re-approval
+            </Button>
+
+            <Button fullWidth variant="outline" onClick={handleBackToSignIn}>
+              Back to Sign In
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Google: No Firestore profile found — ask to register
+  if (blockedState === 'noProfile') {
+    return (
+      <Card className="w-full">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+            <ExclamationTriangleIcon className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            No Account Found
+          </h1>
+
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
+            We couldn't find an account linked to your Google profile.
+            Please register to create your account.
+          </p>
+
+          <div className="space-y-3">
+            <Button
+              fullWidth
+              onClick={() => navigate(PUBLIC_ROUTES.REGISTER)}
+              leftIcon={<UserPlusIcon className="h-5 w-5" />}
+            >
+              Register New Account
+            </Button>
+
+            <Button fullWidth variant="outline" onClick={handleBackToSignIn}>
+              Back to Sign In
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">

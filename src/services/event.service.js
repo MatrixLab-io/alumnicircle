@@ -14,12 +14,15 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { uploadImage } from './cloudinary.service';
-import { COLLECTIONS, EVENT_STATUS, PARTICIPANT_STATUS } from '../config/constants';
+import { COLLECTIONS, EVENT_STATUS, PARTICIPANT_STATUS, ACTIVITY_TYPES } from '../config/constants';
+import { logActivity } from './activityLog.service';
 
 /**
  * Create a new event
  */
-export const createEvent = async (eventData, adminUid) => {
+export const createEvent = async (eventData, adminInfo = {}) => {
+  const { uid: adminUid, name: adminName, email: adminEmail } = adminInfo;
+
   const docRef = await addDoc(collection(db, COLLECTIONS.EVENTS), {
     ...eventData,
     currentParticipants: 0,
@@ -28,6 +31,17 @@ export const createEvent = async (eventData, adminUid) => {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+
+  // Log activity (fire-and-forget)
+  logActivity({
+    type: ACTIVITY_TYPES.EVENT_CREATED,
+    adminId: adminUid,
+    adminName,
+    adminEmail,
+    targetId: docRef.id,
+    targetName: eventData.title,
+  }).catch(() => {});
+
   return { id: docRef.id, success: true };
 };
 
@@ -52,18 +66,42 @@ export const getEventById = async (eventId) => {
 /**
  * Update event
  */
-export const updateEvent = async (eventId, data) => {
+export const updateEvent = async (eventId, data, adminInfo = {}) => {
+  const { uid: adminUid, name: adminName, email: adminEmail } = adminInfo;
+
   await updateDoc(doc(db, COLLECTIONS.EVENTS, eventId), {
     ...data,
     updatedAt: serverTimestamp(),
   });
+
+  // Log activity only when admin info is provided (skip for banner-only updates)
+  if (adminUid) {
+    logActivity({
+      type: ACTIVITY_TYPES.EVENT_UPDATED,
+      adminId: adminUid,
+      adminName,
+      adminEmail,
+      targetId: eventId,
+      targetName: data.title || null,
+    }).catch(() => {});
+  }
+
   return { success: true };
 };
 
 /**
  * Delete event
  */
-export const deleteEvent = async (eventId) => {
+export const deleteEvent = async (eventId, adminInfo = {}) => {
+  const { uid: adminUid, name: adminName, email: adminEmail } = adminInfo;
+
+  // Get event details before deletion for logging
+  let eventTitle = null;
+  if (adminUid) {
+    const eventData = await getEventById(eventId);
+    eventTitle = eventData?.title;
+  }
+
   // Delete all participants first
   const participantsQuery = query(
     collection(db, COLLECTIONS.EVENT_PARTICIPANTS),
@@ -75,6 +113,19 @@ export const deleteEvent = async (eventId) => {
 
   // Delete event document
   await deleteDoc(doc(db, COLLECTIONS.EVENTS, eventId));
+
+  // Log activity only when admin info is provided (skip when called from archiveEvent)
+  if (adminUid) {
+    logActivity({
+      type: ACTIVITY_TYPES.EVENT_DELETED,
+      adminId: adminUid,
+      adminName,
+      adminEmail,
+      targetId: eventId,
+      targetName: eventTitle,
+    }).catch(() => {});
+  }
+
   return { success: true };
 };
 
@@ -205,7 +256,13 @@ export const getEventParticipants = async (eventId, status = null) => {
 /**
  * Approve participant
  */
-export const approveParticipant = async (participantId, adminUid) => {
+export const approveParticipant = async (participantId, adminInfo = {}) => {
+  const { uid: adminUid, name: adminName, email: adminEmail } = adminInfo;
+
+  // Get participant details for logging
+  const participantDoc = await getDoc(doc(db, COLLECTIONS.EVENT_PARTICIPANTS, participantId));
+  const participantData = participantDoc.data();
+
   await updateDoc(doc(db, COLLECTIONS.EVENT_PARTICIPANTS, participantId), {
     status: PARTICIPANT_STATUS.APPROVED,
     paymentVerified: true,
@@ -214,13 +271,31 @@ export const approveParticipant = async (participantId, adminUid) => {
     approvedAt: serverTimestamp(),
     approvedBy: adminUid,
   });
+
+  // Log activity (fire-and-forget)
+  logActivity({
+    type: ACTIVITY_TYPES.PARTICIPANT_APPROVED,
+    adminId: adminUid,
+    adminName,
+    adminEmail,
+    targetId: participantId,
+    targetName: participantData?.userName,
+    details: { eventId: participantData?.eventId, userEmail: participantData?.userEmail },
+  }).catch(() => {});
+
   return { success: true };
 };
 
 /**
  * Reject participant
  */
-export const rejectParticipant = async (participantId, eventId, adminUid, notes = null) => {
+export const rejectParticipant = async (participantId, eventId, adminInfo = {}, notes = null) => {
+  const { uid: adminUid, name: adminName, email: adminEmail } = adminInfo;
+
+  // Get participant details for logging
+  const participantDoc = await getDoc(doc(db, COLLECTIONS.EVENT_PARTICIPANTS, participantId));
+  const participantData = participantDoc.data();
+
   await updateDoc(doc(db, COLLECTIONS.EVENT_PARTICIPANTS, participantId), {
     status: PARTICIPANT_STATUS.REJECTED,
     approvedBy: adminUid,
@@ -231,6 +306,17 @@ export const rejectParticipant = async (participantId, eventId, adminUid, notes 
   await updateDoc(doc(db, COLLECTIONS.EVENTS, eventId), {
     currentParticipants: increment(-1),
   });
+
+  // Log activity (fire-and-forget)
+  logActivity({
+    type: ACTIVITY_TYPES.PARTICIPANT_REJECTED,
+    adminId: adminUid,
+    adminName,
+    adminEmail,
+    targetId: participantId,
+    targetName: participantData?.userName,
+    details: { eventId, userEmail: participantData?.userEmail, reason: notes },
+  }).catch(() => {});
 
   return { success: true };
 };
@@ -260,7 +346,9 @@ export const getUserEvents = async (userId) => {
 /**
  * Archive completed event
  */
-export const archiveEvent = async (eventId, adminUid) => {
+export const archiveEvent = async (eventId, adminInfo = {}) => {
+  const { uid: adminUid, name: adminName, email: adminEmail } = adminInfo;
+
   const event = await getEventById(eventId);
   if (!event) throw new Error('Event not found');
 
@@ -284,8 +372,19 @@ export const archiveEvent = async (eventId, adminUid) => {
     archivedBy: adminUid,
   });
 
-  // Delete original event and participants
+  // Delete original event and participants (no adminInfo to avoid duplicate log)
   await deleteEvent(eventId);
+
+  // Log activity (fire-and-forget)
+  logActivity({
+    type: ACTIVITY_TYPES.EVENT_ARCHIVED,
+    adminId: adminUid,
+    adminName,
+    adminEmail,
+    targetId: eventId,
+    targetName: event.title,
+    details: { totalParticipants: participants.length },
+  }).catch(() => {});
 
   return { success: true };
 };

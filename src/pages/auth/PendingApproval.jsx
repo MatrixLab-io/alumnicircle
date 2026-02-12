@@ -55,20 +55,39 @@ export default function PendingApproval() {
         </div>
 
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Awaiting Approval
+          {location.state?.reactivated ? 'Account Reactivation' : 'Awaiting Approval'}
         </h1>
 
-        <p className="text-gray-500 dark:text-gray-400 mb-6">
-          Thank you for registering, <strong className="text-gray-900 dark:text-white">{userProfile?.name}</strong>!
-          Your account is pending approval from an administrator.
-        </p>
+        {location.state?.reactivated ? (
+          <>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
+              Hi <strong className="text-gray-900 dark:text-white">{userProfile?.name}</strong>,
+              your account was previously removed by an administrator.
+              A new approval request has been submitted automatically.
+            </p>
 
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg mb-6">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            This helps us ensure that only Batch 2003 alumni can access the directory.
-            You'll receive an email once your account is approved.
-          </p>
-        </div>
+            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg mb-6">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                Please wait for an administrator to review and approve your account.
+                You'll receive a notification once approved.
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
+              Thank you for registering, <strong className="text-gray-900 dark:text-white">{userProfile?.name}</strong>!
+              Your account is pending approval from an administrator.
+            </p>
+
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg mb-6">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                This helps us ensure that only Batch 2003 alumni can access the directory.
+                You'll receive an email once your account is approved.
+              </p>
+            </div>
+          </>
+        )}
 
         <div className="space-y-3">
           <Button

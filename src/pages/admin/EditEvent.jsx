@@ -190,7 +190,7 @@ export default function EditEvent() {
         eventData.banner = bannerUrl;
       }
 
-      await updateEvent(id, eventData);
+      await updateEvent(id, eventData, { uid: userProfile.uid, name: userProfile.name, email: userProfile.email });
       toast.success('Event updated successfully');
       navigate(ADMIN_ROUTES.MANAGE_EVENTS);
     } catch (error) {

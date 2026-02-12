@@ -44,6 +44,7 @@ import EventParticipants from './pages/admin/EventParticipants';
 import EditEvent from './pages/admin/EditEvent';
 import ArchivedEvents from './pages/admin/ArchivedEvents';
 import ManageAdmins from './pages/admin/ManageAdmins';
+import ActivityLog from './pages/admin/ActivityLog';
 
 // Route configs
 import { PUBLIC_ROUTES, USER_ROUTES, ADMIN_ROUTES } from './config/routes';
@@ -130,6 +131,7 @@ export default function App() {
                   <Route path={ADMIN_ROUTES.ARCHIVED_EVENTS} element={<ArchivedEvents />} />
                   <Route path={ADMIN_ROUTES.EDIT_EVENT} element={<EditEvent />} />
                   <Route path={ADMIN_ROUTES.EVENT_PARTICIPANTS} element={<EventParticipants />} />
+                  <Route path={ADMIN_ROUTES.ACTIVITY_LOG} element={<ActivityLog />} />
                 </Route>
 
                 {/* Super Admin Routes */}

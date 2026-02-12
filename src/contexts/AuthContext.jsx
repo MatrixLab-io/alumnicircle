@@ -8,7 +8,7 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../config/firebase';
 import { USER_ROLES, USER_STATUS, VISIBILITY, COLLECTIONS } from '../config/constants';
 import { getErrorMessage, logError } from '../utils/errorMessages';
@@ -42,13 +42,37 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Check if email already exists in Firestore users collection
+  const getExistingProfileByEmail = async (email) => {
+    const q = query(
+      collection(db, COLLECTIONS.USERS),
+      where('email', '==', email),
+      limit(1)
+    );
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      const docSnap = snapshot.docs[0];
+      return { uid: docSnap.id, ...docSnap.data() };
+    }
+    return null;
+  };
+
   // Create initial user profile
   const createUserProfile = async (uid, data) => {
+    // Check for duplicate email
+    const existing = await getExistingProfileByEmail(data.email);
+    if (existing) {
+      // Tell the user which auth method was used originally
+      const method = existing.authProvider === 'google' ? 'Google' : 'email/password';
+      throw { code: 'auth/email-already-in-use', message: `An account with this email already exists. Please sign in with ${method}.` };
+    }
+
     const userRef = doc(db, COLLECTIONS.USERS, uid);
     const profileData = {
       email: data.email,
       name: data.name,
       phone: data.phone || '',
+      authProvider: data.authProvider || 'email',
       phoneVisibility: VISIBILITY.PRIVATE,
       emailVisibility: VISIBILITY.PUBLIC,
       nameVisibility: VISIBILITY.PUBLIC,
@@ -94,7 +118,7 @@ export function AuthProvider({ children }) {
       const result = await createUserWithEmailAndPassword(auth, email, password);
 
       // Create user profile in Firestore
-      await createUserProfile(result.user.uid, { email, name, phone });
+      await createUserProfile(result.user.uid, { email, name, phone, authProvider: 'email' });
 
       // Send email verification with redirect
       await sendEmailVerification(result.user, actionCodeSettings);
@@ -114,25 +138,66 @@ export function AuthProvider({ children }) {
       setError(null);
       const result = await signInWithPopup(auth, googleProvider);
 
-      // Check if user profile exists
+      // Check if user profile exists for this UID
       const existingProfile = await fetchUserProfile(result.user.uid);
 
       if (!existingProfile) {
-        // New user - create profile
-        await createUserProfile(result.user.uid, {
-          email: result.user.email,
-          name: additionalData.name || result.user.displayName || '',
-          phone: additionalData.phone || '',
-        });
-        await fetchUserProfile(result.user.uid);
+        // No profile for this UID — check if email already registered under a different UID
+        const emailProfile = await getExistingProfileByEmail(result.user.email);
+
+        if (emailProfile) {
+          // Block if originally registered with email/password
+          if (emailProfile.authProvider === 'email') {
+            await signOut(auth);
+            setUser(null);
+            setUserProfile(null);
+            const msg = 'This email was registered with email/password. Please sign in with your email and password.';
+            setError(msg);
+            return { success: false, error: msg };
+          }
+          // Email exists under a different UID with Google — use the existing profile
+          setUserProfile(emailProfile);
+          await updateDoc(doc(db, COLLECTIONS.USERS, emailProfile.uid), {
+            lastLoginAt: serverTimestamp(),
+          });
+          return { success: true, user: result.user, isNewUser: false };
+        }
+
+        // If coming from the registration page, create the profile
+        if (additionalData.isRegistration || additionalData.name || additionalData.phone) {
+          await createUserProfile(result.user.uid, {
+            email: result.user.email,
+            name: additionalData.name || result.user.displayName || '',
+            phone: additionalData.phone || '',
+            authProvider: 'google',
+          });
+          await fetchUserProfile(result.user.uid);
+          return { success: true, user: result.user, isNewUser: true };
+        }
+
+        // No Firestore profile — could be new user or deleted user
+        // Delete the auto-created Firebase Auth account to keep things clean
+        try { await result.user.delete(); } catch (_) { await signOut(auth); }
+        setUser(null);
+        setUserProfile(null);
+        return { success: false, noProfile: true };
       } else {
-        // Existing user - update last login
+        // Block if originally registered with email/password
+        if (existingProfile.authProvider === 'email') {
+          await signOut(auth);
+          setUser(null);
+          setUserProfile(null);
+          const msg = 'This account was registered with email/password. Please sign in with your email and password.';
+          setError(msg);
+          return { success: false, error: msg };
+        }
+        // Existing Google user - update last login
         await updateDoc(doc(db, COLLECTIONS.USERS, result.user.uid), {
           lastLoginAt: serverTimestamp(),
         });
       }
 
-      return { success: true, user: result.user, isNewUser: !existingProfile };
+      return { success: true, user: result.user, isNewUser: false };
     } catch (err) {
       logError('Google Sign-In', err);
       const errorMessage = getErrorMessage(err);
@@ -147,15 +212,121 @@ export function AuthProvider({ children }) {
       setError(null);
       const result = await signInWithEmailAndPassword(auth, email, password);
 
+      // Check if Firestore profile still exists (may have been deleted by admin)
+      const profile = await fetchUserProfile(result.user.uid);
+      if (!profile) {
+        // User was deleted by admin — sign out and notify the caller
+        await signOut(auth);
+        setUser(null);
+        setUserProfile(null);
+        return { success: false, accountRemoved: true };
+      }
+
+      // Block if originally registered with Google
+      if (profile.authProvider === 'google') {
+        await signOut(auth);
+        setUser(null);
+        setUserProfile(null);
+        const msg = 'This account was registered with Google. Please sign in with Google.';
+        setError(msg);
+        return { success: false, error: msg };
+      }
+
       // Update last login
       await updateDoc(doc(db, COLLECTIONS.USERS, result.user.uid), {
         lastLoginAt: serverTimestamp(),
       });
 
-      await fetchUserProfile(result.user.uid);
       return { success: true, user: result.user };
     } catch (err) {
       logError('Login', err);
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // Request re-approval for a deleted account (signs in and creates pending profile)
+  const requestReapproval = async (email, password) => {
+    try {
+      setError(null);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = result.user;
+      const userRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
+      const profileData = {
+        email: firebaseUser.email,
+        name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+        phone: '',
+        authProvider: 'email',
+        phoneVisibility: VISIBILITY.PRIVATE,
+        emailVisibility: VISIBILITY.PUBLIC,
+        nameVisibility: VISIBILITY.PUBLIC,
+        role: USER_ROLES.USER,
+        status: USER_STATUS.PENDING,
+        photo: firebaseUser.photoURL || null,
+        bloodGroup: null,
+        profession: null,
+        address: null,
+        socialLinks: null,
+        profileCompletion: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        approvedAt: null,
+        approvedBy: null,
+        lastLoginAt: serverTimestamp(),
+      };
+      await setDoc(userRef, profileData);
+      await fetchUserProfile(firebaseUser.uid);
+      return { success: true };
+    } catch (err) {
+      logError('Re-approval request', err);
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // Request re-approval for a deleted Google account
+  const requestReapprovalGoogle = async () => {
+    try {
+      setError(null);
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseUser = result.user;
+
+      // Double-check profile doesn't exist already (in case of race)
+      const existing = await fetchUserProfile(firebaseUser.uid);
+      if (existing) {
+        return { success: true };
+      }
+
+      const userRef = doc(db, COLLECTIONS.USERS, firebaseUser.uid);
+      const profileData = {
+        email: firebaseUser.email,
+        name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+        phone: '',
+        authProvider: 'google',
+        phoneVisibility: VISIBILITY.PRIVATE,
+        emailVisibility: VISIBILITY.PUBLIC,
+        nameVisibility: VISIBILITY.PUBLIC,
+        role: USER_ROLES.USER,
+        status: USER_STATUS.PENDING,
+        photo: firebaseUser.photoURL || null,
+        bloodGroup: null,
+        profession: null,
+        address: null,
+        socialLinks: null,
+        profileCompletion: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        approvedAt: null,
+        approvedBy: null,
+        lastLoginAt: serverTimestamp(),
+      };
+      await setDoc(userRef, profileData);
+      await fetchUserProfile(firebaseUser.uid);
+      return { success: true };
+    } catch (err) {
+      logError('Google re-approval request', err);
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
       return { success: false, error: errorMessage };
@@ -223,6 +394,8 @@ export function AuthProvider({ children }) {
     registerWithEmail,
     signInWithGoogle,
     loginWithEmail,
+    requestReapproval,
+    requestReapprovalGoogle,
     logout,
     resendVerificationEmail,
     resetPassword,

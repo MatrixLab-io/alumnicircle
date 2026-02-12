@@ -15,8 +15,9 @@ import {
 import { db } from '../config/firebase';
 import { uploadImage } from './cloudinary.service';
 import { sendApprovalEmail } from './email.service';
-import { COLLECTIONS, USER_STATUS, ITEMS_PER_PAGE } from '../config/constants';
+import { COLLECTIONS, USER_STATUS, ITEMS_PER_PAGE, ACTIVITY_TYPES } from '../config/constants';
 import { calculateProfileCompletion } from '../utils/helpers';
+import { logActivity } from './activityLog.service';
 
 /**
  * Get user by ID
@@ -133,7 +134,9 @@ export const getPendingUsers = async () => {
 /**
  * Approve user
  */
-export const approveUser = async (uid, adminUid) => {
+export const approveUser = async (uid, adminInfo = {}) => {
+  const { uid: adminUid, name: adminName, email: adminEmail } = adminInfo;
+
   // Get user details before approval
   const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, uid));
   const userData = userDoc.data();
@@ -161,30 +164,76 @@ export const approveUser = async (uid, adminUid) => {
     }
   }
 
+  // Log activity (fire-and-forget)
+  logActivity({
+    type: ACTIVITY_TYPES.USER_APPROVED,
+    adminId: adminUid,
+    adminName,
+    adminEmail,
+    targetId: uid,
+    targetName: userData?.name,
+    details: { userEmail: userData?.email },
+  }).catch(() => {});
+
   return { success: true };
 };
 
 /**
  * Reject user
  */
-export const rejectUser = async (uid, adminUid) => {
-  await updateDoc(doc(db, COLLECTIONS.USERS, uid), {
-    status: USER_STATUS.REJECTED,
-    approvedAt: serverTimestamp(),
-    approvedBy: adminUid,
-    updatedAt: serverTimestamp(),
-  });
+export const rejectUser = async (uid, adminInfo = {}) => {
+  const { uid: adminUid, name: adminName, email: adminEmail } = adminInfo;
+
+  // Get user details before deletion
+  const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, uid));
+  const userData = userDoc.data();
+
+  // Delete user document (rejected users are removed entirely)
+  await deleteDoc(doc(db, COLLECTIONS.USERS, uid));
+
+  // Log activity (fire-and-forget)
+  logActivity({
+    type: ACTIVITY_TYPES.USER_REJECTED,
+    adminId: adminUid,
+    adminName,
+    adminEmail,
+    targetId: uid,
+    targetName: userData?.name,
+    details: { userEmail: userData?.email },
+  }).catch(() => {});
+
   return { success: true };
 };
 
 /**
  * Update user role
  */
-export const updateUserRole = async (uid, role) => {
+export const updateUserRole = async (uid, role, adminInfo = {}) => {
+  const { uid: adminUid, name: adminName, email: adminEmail } = adminInfo;
+
+  // Get user details before role change
+  const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, uid));
+  const userData = userDoc.data();
+  const oldRole = userData?.role;
+
   await updateDoc(doc(db, COLLECTIONS.USERS, uid), {
     role,
     updatedAt: serverTimestamp(),
   });
+
+  // Log activity (fire-and-forget)
+  if (adminUid) {
+    logActivity({
+      type: ACTIVITY_TYPES.USER_ROLE_CHANGED,
+      adminId: adminUid,
+      adminName,
+      adminEmail,
+      targetId: uid,
+      targetName: userData?.name,
+      details: { userEmail: userData?.email, oldRole, newRole: role },
+    }).catch(() => {});
+  }
+
   return { success: true };
 };
 
@@ -222,12 +271,53 @@ export const getAllUsers = async (options = {}) => {
 };
 
 /**
- * Delete user
+ * Delete user and their event participation records
  */
-export const deleteUser = async (uid) => {
+export const deleteUser = async (uid, adminInfo = {}) => {
+  const { uid: adminUid, name: adminName, email: adminEmail } = adminInfo;
+
+  // Get user details before deletion for logging
+  const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, uid));
+  const userData = userDoc.data();
+
+  // Delete all event participation records for this user
+  const participantsQuery = query(
+    collection(db, COLLECTIONS.EVENT_PARTICIPANTS),
+    where('userId', '==', uid)
+  );
+  const participantsSnapshot = await getDocs(participantsQuery);
+  const deletePromises = participantsSnapshot.docs.map((d) => deleteDoc(d.ref));
+  await Promise.all(deletePromises);
+
   // Delete user document
   await deleteDoc(doc(db, COLLECTIONS.USERS, uid));
+
+  // Log activity (fire-and-forget)
+  if (adminUid) {
+    logActivity({
+      type: ACTIVITY_TYPES.USER_DELETED,
+      adminId: adminUid,
+      adminName,
+      adminEmail,
+      targetId: uid,
+      targetName: userData?.name,
+      details: { userEmail: userData?.email },
+    }).catch(() => {});
+  }
+
   return { success: true };
+};
+
+/**
+ * Bulk delete users
+ */
+export const deleteUsers = async (uids, adminInfo = {}) => {
+  const results = await Promise.allSettled(
+    uids.map((uid) => deleteUser(uid, adminInfo))
+  );
+  const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+  const failed = results.filter((r) => r.status === 'rejected').length;
+  return { succeeded, failed };
 };
 
 /**

@@ -1,13 +1,98 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, Button, Input } from '../common';
 import GoogleSignInButton from './GoogleSignInButton';
 import PasswordInput from './PasswordInput';
 import { validationRules } from '../../utils/validators';
+import { getPasswordStrength } from '../../utils/validators';
 import { PUBLIC_ROUTES } from '../../config/routes';
+
+const PASSWORD_RULES = [
+  { key: 'minLength', label: 'At least 8 characters', test: (v) => v.length >= 8 },
+  { key: 'uppercase', label: 'One uppercase letter', test: (v) => /[A-Z]/.test(v) },
+  { key: 'number', label: 'One number', test: (v) => /[0-9]/.test(v) },
+];
+
+const STRENGTH_COLORS = {
+  red: 'bg-red-500',
+  yellow: 'bg-yellow-500',
+  green: 'bg-green-500',
+};
+
+const STRENGTH_TEXT_COLORS = {
+  red: 'text-red-500',
+  yellow: 'text-yellow-500',
+  green: 'text-green-500',
+};
+
+function PasswordChecklist({ password }) {
+  if (!password) return null;
+
+  const strength = getPasswordStrength(password);
+  const strengthPercent = Math.round((strength.score / 6) * 100);
+
+  return (
+    <div className="mt-2 space-y-2">
+      {/* Strength bar */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${STRENGTH_COLORS[strength.color]}`}
+            style={{ width: `${strengthPercent}%` }}
+          />
+        </div>
+        <span className={`text-xs font-medium ${STRENGTH_TEXT_COLORS[strength.color]}`}>
+          {strength.label}
+        </span>
+      </div>
+
+      {/* Requirements checklist */}
+      <ul className="space-y-1">
+        {PASSWORD_RULES.map((rule) => {
+          const passed = rule.test(password);
+          return (
+            <li key={rule.key} className="flex items-center gap-1.5">
+              {passed ? (
+                <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+              ) : (
+                <XCircleIcon className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 flex-shrink-0" />
+              )}
+              <span className={`text-xs ${passed ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                {rule.label}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function ConfirmPasswordStatus({ password, confirmPassword }) {
+  if (!confirmPassword) return null;
+
+  const matches = password === confirmPassword;
+
+  return (
+    <div className="mt-1 flex items-center gap-1.5">
+      {matches ? (
+        <>
+          <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
+          <span className="text-xs text-green-600 dark:text-green-400">Passwords match</span>
+        </>
+      ) : (
+        <>
+          <XCircleIcon className="h-3.5 w-3.5 text-red-500" />
+          <span className="text-xs text-red-500">Passwords do not match</span>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function RegisterForm() {
   const navigate = useNavigate();
@@ -20,9 +105,10 @@ export default function RegisterForm() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm();
+  } = useForm({ mode: 'onChange' });
 
-  const password = watch('password');
+  const password = watch('password', '');
+  const confirmPassword = watch('confirmPassword', '');
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -44,7 +130,7 @@ export default function RegisterForm() {
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
-    const result = await signInWithGoogle();
+    const result = await signInWithGoogle({ isRegistration: true });
     setIsGoogleLoading(false);
 
     if (result.success) {
@@ -55,6 +141,8 @@ export default function RegisterForm() {
         toast.success('Welcome back!');
         navigate('/dashboard');
       }
+    } else if (result.noProfile) {
+      toast.error('Registration failed. Please try again.');
     } else {
       toast.error(result.error || 'Google sign-in failed. Please try again.');
     }
@@ -121,22 +209,27 @@ export default function RegisterForm() {
           {...register('phone', validationRules.phone)}
         />
 
-        <PasswordInput
-          label="Password"
-          placeholder="Create a password"
-          helperText="At least 8 characters, 1 uppercase, 1 number"
-          error={errors.password?.message}
-          required
-          {...register('password', validationRules.password)}
-        />
+        <div>
+          <PasswordInput
+            label="Password"
+            placeholder="Create a password"
+            error={errors.password?.message}
+            required
+            {...register('password', validationRules.password)}
+          />
+          <PasswordChecklist password={password} />
+        </div>
 
-        <PasswordInput
-          label="Confirm Password"
-          placeholder="Confirm your password"
-          error={errors.confirmPassword?.message}
-          required
-          {...register('confirmPassword', validationRules.confirmPassword(() => password))}
-        />
+        <div>
+          <PasswordInput
+            label="Confirm Password"
+            placeholder="Confirm your password"
+            error={errors.confirmPassword?.message}
+            required
+            {...register('confirmPassword', validationRules.confirmPassword(() => password))}
+          />
+          <ConfirmPasswordStatus password={password} confirmPassword={confirmPassword} />
+        </div>
 
         <Button
           type="submit"

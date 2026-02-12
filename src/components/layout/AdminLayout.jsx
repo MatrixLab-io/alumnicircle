@@ -7,6 +7,7 @@ import {
   ShieldCheckIcon,
   PlusCircleIcon,
   ArchiveBoxIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
 import Navbar from './Navbar';
 import Container from './Container';
@@ -21,6 +22,7 @@ const sidebarNavigation = [
   { name: 'Manage Events', href: ADMIN_ROUTES.MANAGE_EVENTS, icon: CalendarIcon },
   { name: 'Archived Events', href: ADMIN_ROUTES.ARCHIVED_EVENTS, icon: ArchiveBoxIcon },
   { name: 'Create Event', href: ADMIN_ROUTES.CREATE_EVENT, icon: PlusCircleIcon },
+  { name: 'Activity Log', href: ADMIN_ROUTES.ACTIVITY_LOG, icon: ClipboardDocumentListIcon },
 ];
 
 const superAdminNavigation = [

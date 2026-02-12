@@ -15,7 +15,7 @@ import {
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
-import { Card, Button, Spinner, EmptyState, Badge, Dropdown } from '../../components/common';
+import { Card, Button, Spinner, EmptyState, Badge, Dropdown, ConfirmDialog } from '../../components/common';
 import { getAllEvents, deleteEvent, archiveEvent, getEventById, getEventParticipants } from '../../services/event.service';
 import { formatDate, formatCurrency, getEventLiveStatus } from '../../utils/helpers';
 import { formatEventLocation } from '../../utils/formatters';
@@ -31,6 +31,7 @@ export default function ManageEvents() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [confirmState, setConfirmState] = useState({ open: false, type: null, eventId: null });
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -56,14 +57,20 @@ export default function ManageEvents() {
     }
   };
 
-  const handleDelete = async (eventId) => {
-    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-      return;
-    }
+  const openConfirm = (type, eventId) => setConfirmState({ open: true, type, eventId });
+  const closeConfirm = () => setConfirmState({ open: false, type: null, eventId: null });
 
+  const handleConfirmAction = async () => {
+    const { type, eventId } = confirmState;
+    closeConfirm();
+    if (type === 'delete') await executeDelete(eventId);
+    if (type === 'archive') await executeArchive(eventId);
+  };
+
+  const executeDelete = async (eventId) => {
     setProcessingId(eventId);
     try {
-      await deleteEvent(eventId);
+      await deleteEvent(eventId, { uid: userProfile.uid, name: userProfile.name, email: userProfile.email });
       toast.success('Event deleted');
       setEvents((prev) => prev.filter((e) => e.id !== eventId));
     } catch (error) {
@@ -73,11 +80,7 @@ export default function ManageEvents() {
     }
   };
 
-  const handleArchive = async (eventId) => {
-    if (!confirm('Archive this event? Participants will be exported and the event will be removed.')) {
-      return;
-    }
-
+  const executeArchive = async (eventId) => {
     setProcessingId(eventId);
     try {
       // Fetch event + approved participants before archiving
@@ -91,7 +94,7 @@ export default function ManageEvents() {
         exportToExcel(formatted, `${safeTitle}_participants`, 'Participants');
       }
 
-      await archiveEvent(eventId, userProfile.uid);
+      await archiveEvent(eventId, { uid: userProfile.uid, name: userProfile.name, email: userProfile.email });
       toast.success('Event archived successfully');
       setEvents((prev) => prev.filter((e) => e.id !== eventId));
     } catch (error) {
@@ -249,14 +252,14 @@ export default function ManageEvents() {
                     </Dropdown.Item>
                     <Dropdown.Item
                       icon={<ArchiveBoxIcon className="h-4 w-4" />}
-                      onClick={() => handleArchive(event.id)}
+                      onClick={() => openConfirm('archive', event.id)}
                     >
                       Archive Event
                     </Dropdown.Item>
                     <Dropdown.Divider />
                     <Dropdown.Item
                       icon={<TrashIcon className="h-4 w-4" />}
-                      onClick={() => handleDelete(event.id)}
+                      onClick={() => openConfirm('delete', event.id)}
                       danger
                     >
                       Delete Event
@@ -269,6 +272,21 @@ export default function ManageEvents() {
           })}
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmState.open}
+        onClose={closeConfirm}
+        onConfirm={handleConfirmAction}
+        variant={confirmState.type === 'archive' ? 'warning' : 'danger'}
+        title={confirmState.type === 'archive' ? 'Archive event?' : 'Delete event?'}
+        message={
+          confirmState.type === 'archive'
+            ? `Participants will be exported and the event "${events.find((e) => e.id === confirmState.eventId)?.title || ''}" will be moved to the archive.`
+            : `This will permanently delete "${events.find((e) => e.id === confirmState.eventId)?.title || ''}" and all its participant data. This action cannot be undone.`
+        }
+        confirmLabel={confirmState.type === 'archive' ? 'Archive' : 'Delete'}
+      />
     </>
   );
 }

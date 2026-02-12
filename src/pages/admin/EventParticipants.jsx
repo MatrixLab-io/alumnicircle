@@ -85,7 +85,7 @@ export default function EventParticipants() {
   const handleApprove = async (participantId) => {
     setProcessingId(participantId);
     try {
-      await approveParticipant(participantId, userProfile.uid);
+      await approveParticipant(participantId, { uid: userProfile.uid, name: userProfile.name, email: userProfile.email });
       const participant = participants.find((p) => p.id === participantId);
       if (event && participant) {
         generateInvoicePDF(event, participant);
@@ -107,7 +107,7 @@ export default function EventParticipants() {
     const reason = prompt('Reason for rejection (optional):');
     setProcessingId(participantId);
     try {
-      await rejectParticipant(participantId, id, userProfile.uid, reason);
+      await rejectParticipant(participantId, id, { uid: userProfile.uid, name: userProfile.name, email: userProfile.email }, reason);
       toast.success('Participant rejected');
       setParticipants((prev) =>
         prev.map((p) =>

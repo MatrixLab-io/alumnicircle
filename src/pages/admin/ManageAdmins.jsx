@@ -4,7 +4,7 @@ import { ShieldCheckIcon, UserPlusIcon, TrashIcon } from '@heroicons/react/24/ou
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
-import { Card, Button, Spinner, EmptyState, Avatar, Badge, Modal, Input, Select } from '../../components/common';
+import { Card, Button, Spinner, EmptyState, Avatar, Badge, Modal, Input, Select, ConfirmDialog } from '../../components/common';
 import { getAllUsers, updateUserRole } from '../../services/user.service';
 import { formatDate } from '../../utils/helpers';
 import { APP_NAME, USER_ROLES, USER_STATUS } from '../../config/constants';
@@ -17,6 +17,7 @@ export default function ManageAdmins() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -54,7 +55,7 @@ export default function ManageAdmins() {
 
     setIsProcessing(true);
     try {
-      await updateUserRole(selectedUserId, USER_ROLES.ADMIN);
+      await updateUserRole(selectedUserId, USER_ROLES.ADMIN, { uid: userProfile.uid, name: userProfile.name, email: userProfile.email });
       toast.success('Admin added successfully');
       setShowAddModal(false);
       setSelectedUserId('');
@@ -66,17 +67,14 @@ export default function ManageAdmins() {
     }
   };
 
-  const handleRemoveAdmin = async (userId) => {
-    if (userId === userProfile.uid) {
-      toast.error("You can't remove yourself as admin");
-      return;
-    }
-
-    if (!confirm('Are you sure you want to remove this admin?')) return;
+  const executeRemoveAdmin = async () => {
+    const admin = removeTarget;
+    if (!admin) return;
+    setRemoveTarget(null);
 
     setIsProcessing(true);
     try {
-      await updateUserRole(userId, USER_ROLES.USER);
+      await updateUserRole(admin.uid, USER_ROLES.USER, { uid: userProfile.uid, name: userProfile.name, email: userProfile.email });
       toast.success('Admin removed');
       await fetchData();
     } catch (error) {
@@ -154,7 +152,7 @@ export default function ManageAdmins() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleRemoveAdmin(admin.uid)}
+                    onClick={() => setRemoveTarget(admin)}
                     className="text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     <TrashIcon className="h-4 w-4 mr-1" />
@@ -204,6 +202,17 @@ export default function ManageAdmins() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Remove Admin Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!removeTarget}
+        onClose={() => setRemoveTarget(null)}
+        onConfirm={executeRemoveAdmin}
+        variant="warning"
+        title="Remove admin?"
+        message={`This will revoke admin privileges from ${removeTarget?.name || 'this user'}. They will become a regular member.`}
+        confirmLabel="Remove Admin"
+      />
     </>
   );
 }
