@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarIcon, UsersIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, UsersIcon, MapPinIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navbar } from '../../components/layout';
 import { Card, Button, Badge, Spinner } from '../../components/common';
@@ -141,8 +141,8 @@ export default function Landing() {
             </Card>
 
             <Card className="text-center">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <MapPinIcon className="h-7 w-7 text-purple-600 dark:text-purple-400" />
+              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                <ShieldCheckIcon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Privacy First
