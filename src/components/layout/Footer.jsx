@@ -14,7 +14,7 @@ export default function Footer() {
               <span className="text-white font-bold text-sm">A</span>
             </div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              {currentYear} {APP_NAME}. All rights reserved.
+              &copy; {currentYear} {APP_NAME}. All rights reserved.
             </span>
           </div>
 

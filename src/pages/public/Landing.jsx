@@ -247,7 +247,7 @@ export default function Landing() {
       <footer className="py-8 px-4 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-6xl mx-auto text-center">
           <p className="text-gray-500 dark:text-gray-400">
-            {new Date().getFullYear()} {APP_NAME}. Adarsha School Batch 2003.
+            &copy; {new Date().getFullYear()} {APP_NAME}. Adarsha School Batch 2003.
           </p>
           <p className="mt-2 text-xs text-gray-400 dark:text-gray-600">
             Developed by MatrixLab
