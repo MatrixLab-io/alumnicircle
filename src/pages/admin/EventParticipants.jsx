@@ -20,7 +20,6 @@ import {
   rejectParticipant,
 } from '../../services/event.service';
 import { exportToExcel, formatParticipantsForExport } from '../../utils/exportUtils';
-import { generateInvoicePDF } from '../../utils/pdfUtils';
 import { formatDate } from '../../utils/helpers';
 import { ADMIN_ROUTES } from '../../config/routes';
 import { APP_NAME, PARTICIPANT_STATUS } from '../../config/constants';
@@ -85,11 +84,7 @@ export default function EventParticipants() {
     setProcessingId(participantId);
     try {
       await approveParticipant(participantId, { uid: userProfile.uid, name: userProfile.name, email: userProfile.email });
-      const participant = participants.find((p) => p.id === participantId);
-      if (event && participant) {
-        generateInvoicePDF(event, participant);
-      }
-      toast.success('Participant approved — Invoice downloaded');
+      toast.success('Participant approved');
       setParticipants((prev) =>
         prev.map((p) =>
           p.id === participantId ? { ...p, status: PARTICIPANT_STATUS.APPROVED, paymentVerified: true } : p

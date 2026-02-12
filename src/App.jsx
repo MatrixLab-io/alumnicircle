@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
 
@@ -49,6 +49,30 @@ import ActivityLog from './pages/admin/ActivityLog';
 // Route configs
 import { PUBLIC_ROUTES, USER_ROUTES, ADMIN_ROUTES } from './config/routes';
 
+// Redirect unauthenticated users to public event page instead of login
+function EventRouteGuard() {
+  const { id } = useParams();
+  const { user, userProfile, loading, isApproved } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+      </div>
+    );
+  }
+
+  if (!user || !userProfile || !isApproved) {
+    return <Navigate to={`/event/${id}/public`} replace />;
+  }
+
+  return (
+    <MainLayout>
+      <EventDetailsPage />
+    </MainLayout>
+  );
+}
+
 function AuthAwareFeedback() {
   const { userProfile } = useAuth();
   if (!userProfile) return null;
@@ -98,6 +122,9 @@ export default function App() {
                   <Route path={PUBLIC_ROUTES.PENDING_APPROVAL} element={<PendingApproval />} />
                 </Route>
 
+                {/* Event Details - redirects to public page if not authenticated */}
+                <Route path={USER_ROUTES.EVENT_DETAILS} element={<EventRouteGuard />} />
+
                 {/* Protected User Routes */}
                 <Route
                   element={
@@ -111,7 +138,6 @@ export default function App() {
                   <Route path={USER_ROUTES.EDIT_PROFILE} element={<EditProfile />} />
                   <Route path={USER_ROUTES.DIRECTORY} element={<Directory />} />
                   <Route path={USER_ROUTES.EVENTS} element={<Events />} />
-                  <Route path={USER_ROUTES.EVENT_DETAILS} element={<EventDetailsPage />} />
                   <Route path={USER_ROUTES.MY_EVENTS} element={<MyEvents />} />
                 </Route>
 

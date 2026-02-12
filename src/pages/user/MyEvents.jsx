@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { CalendarIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, ArrowPathIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
 import { Card, Spinner, EmptyState, Badge, Button } from '../../components/common';
@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { getUserEvents } from '../../services/event.service';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import { formatEventLocation } from '../../utils/formatters';
+import { generateInvoicePDF } from '../../utils/pdfUtils';
 import { getEventDetailsRoute, USER_ROUTES } from '../../config/routes';
 import { APP_NAME, PARTICIPANT_STATUS } from '../../config/constants';
 
@@ -131,6 +132,16 @@ export default function MyEvents() {
                 </div>
 
                 <div className="flex items-center gap-2 sm:flex-shrink-0">
+                  {participation.status === PARTICIPANT_STATUS.APPROVED && participation.paymentRequired && participation.event && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => generateInvoicePDF(participation.event, participation)}
+                      leftIcon={<DocumentArrowDownIcon className="h-4 w-4" />}
+                    >
+                      Invoice
+                    </Button>
+                  )}
                   {participation.event && (
                     <Link to={getEventDetailsRoute(participation.eventId)}>
                       <Button size="sm" variant="outline">
