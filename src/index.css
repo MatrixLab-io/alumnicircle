@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Use class-based dark mode instead of prefers-color-scheme */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Custom CSS Variables for Theme - Purple */
 @theme {
   --color-primary-50: #faf5ff;
