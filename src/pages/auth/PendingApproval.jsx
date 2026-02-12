@@ -17,8 +17,10 @@ export default function PendingApproval() {
   useEffect(() => {
     if (location.state?.fromVerification) {
       toast.success('Email verified successfully! Waiting for admin approval.');
+      // Clear state to prevent duplicate toast on re-render
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location]);
+  }, []);
 
   // If approved, redirect to dashboard
   useEffect(() => {
