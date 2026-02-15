@@ -66,48 +66,61 @@ export default function Landing() {
       )}
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <Badge variant="blue" className="mb-6">
-            Adarsha School - Batch 2003
-          </Badge>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-            Reconnect with Your{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">
-              Classmates
-            </span>
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join our exclusive alumni network to stay connected, discover what your classmates are up to, and never miss a reunion event.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            {user ? (
-              <>
-                <Link to={isAdmin ? ADMIN_ROUTES.DASHBOARD : USER_ROUTES.DASHBOARD}>
-                  <Button size="lg" className="px-8">
-                    Go to Dashboard
-                  </Button>
-                </Link>
-                <Link to={USER_ROUTES.DIRECTORY}>
-                  <Button size="lg" variant="outline" className="px-8">
-                    Browse Directory
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link to={PUBLIC_ROUTES.REGISTER}>
-                  <Button size="lg" className="px-8">
-                    Get Started
-                  </Button>
-                </Link>
-                <Link to={PUBLIC_ROUTES.LOGIN}>
-                  <Button size="lg" variant="outline" className="px-8">
-                    I Have an Account
-                  </Button>
-                </Link>
-              </>
-            )}
+      <section className="relative py-20 px-4 overflow-hidden">
+        {/* Floating Background Orbs */}
+        <div className="absolute top-10 left-1/4 w-72 h-72 bg-primary-400/15 dark:bg-primary-500/10 rounded-full blur-3xl animate-float pointer-events-none" />
+        <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-pink-400/15 dark:bg-pink-500/10 rounded-full blur-3xl animate-float-delayed pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary-300/20 dark:bg-primary-600/10 rounded-full blur-3xl animate-float-slow pointer-events-none" />
+
+        <div className="relative max-w-4xl mx-auto text-center">
+          <div className="animate-fade-in-up">
+            <Badge variant="blue" className="mb-6 animate-glow-pulse">
+              Adarsha School - Batch 2003
+            </Badge>
+          </div>
+          <div className="animate-fade-in-up delay-100">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+              Reconnect with Your{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-primary-400 to-primary-600 animate-gradient-shift drop-shadow-[0_0_20px_rgba(147,51,234,0.3)]">
+                Classmates
+              </span>
+            </h1>
+          </div>
+          <div className="animate-fade-in-up delay-200">
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+              Join our exclusive alumni network to stay connected, discover what your classmates are up to, and never miss a reunion event.
+            </p>
+          </div>
+          <div className="animate-fade-in-up delay-300">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              {user ? (
+                <>
+                  <Link to={isAdmin ? ADMIN_ROUTES.DASHBOARD : USER_ROUTES.DASHBOARD}>
+                    <Button size="lg" className="px-8 transition-shadow duration-300 hover:shadow-[0_0_30px_rgba(147,51,234,0.6)]">
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                  <Link to={USER_ROUTES.DIRECTORY}>
+                    <Button size="lg" variant="outline" className="px-8">
+                      Browse Directory
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to={PUBLIC_ROUTES.REGISTER}>
+                    <Button size="lg" className="px-8 transition-shadow duration-300 hover:shadow-[0_0_30px_rgba(147,51,234,0.6)]">
+                      Get Started
+                    </Button>
+                  </Link>
+                  <Link to={PUBLIC_ROUTES.LOGIN}>
+                    <Button size="lg" variant="outline" className="px-8">
+                      I Have an Account
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -116,7 +129,7 @@ export default function Landing() {
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="text-center">
+            <Card className="text-center transition-shadow duration-300 hover:shadow-[0_0_30px_rgba(147,51,234,0.15)]">
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
                 <UsersIcon className="h-7 w-7 text-primary-600 dark:text-primary-400" />
               </div>
@@ -128,7 +141,7 @@ export default function Landing() {
               </p>
             </Card>
 
-            <Card className="text-center">
+            <Card className="text-center transition-shadow duration-300 hover:shadow-[0_0_30px_rgba(147,51,234,0.15)]">
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <CalendarIcon className="h-7 w-7 text-green-600 dark:text-green-400" />
               </div>
@@ -140,7 +153,7 @@ export default function Landing() {
               </p>
             </Card>
 
-            <Card className="text-center">
+            <Card className="text-center transition-shadow duration-300 hover:shadow-[0_0_30px_rgba(147,51,234,0.15)]">
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
                 <ShieldCheckIcon className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
               </div>
