@@ -51,7 +51,7 @@ export default function Footer() {
         {/* Developer credit */}
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-400 dark:text-gray-600">
-            Developed by MatrixLab
+            Developed by <a href="https://matrixlab.it.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary-400 transition-colors">MatrixLab</a>
           </p>
         </div>
       </div>

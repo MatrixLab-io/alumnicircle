@@ -250,7 +250,7 @@ export default function Landing() {
             &copy; {new Date().getFullYear()} {APP_NAME}. Adarsha School Batch 2003.
           </p>
           <p className="mt-2 text-xs text-gray-400 dark:text-gray-600">
-            Developed by MatrixLab
+            Developed by <a href="https://matrixlab.it.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary-400 transition-colors">MatrixLab</a>
           </p>
         </div>
       </footer>
