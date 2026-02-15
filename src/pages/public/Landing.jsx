@@ -42,7 +42,7 @@ export default function Landing() {
               <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-[0_0_20px_rgba(147,51,234,0.5)]">
                 <span className="text-white font-bold text-xl">A</span>
               </div>
-              <span className="font-bold text-2xl text-gray-900 dark:text-white">
+              <span className="font-bold text-2xl text-gray-900 dark:text-white hidden sm:block">
                 {APP_NAME}
               </span>
             </div>
@@ -185,9 +185,15 @@ export default function Landing() {
               <Spinner size="lg" />
             </div>
           ) : events.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">
-                No upcoming events at the moment. Check back later!
+            <div className="flex flex-col items-center py-16">
+              <div className="w-16 h-16 mb-4 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                <CalendarIcon className="h-8 w-8 text-primary-400 dark:text-primary-500" />
+              </div>
+              <p className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
+                No upcoming events yet
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Stay tuned — new events will be announced here soon!
               </p>
             </div>
           ) : (
