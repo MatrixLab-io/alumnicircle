@@ -114,7 +114,10 @@ export default function WhatsNew() {
       >
         <SparklesIcon className="h-5 w-5" />
         {hasNew && (
-          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary-500 ring-2 ring-white dark:ring-gray-900" />
+          <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary-500" />
+          </span>
         )}
       </button>
 
