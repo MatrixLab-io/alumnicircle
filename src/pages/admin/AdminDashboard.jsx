@@ -157,7 +157,30 @@ export default function AdminDashboard() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Mobile: stacked rows */}
+          <div className="sm:hidden divide-y divide-gray-200 dark:divide-gray-700">
+            {pendingUsers.map((user) => (
+              <div key={user.uid} className="py-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar src={user.photo} name={user.name} size="sm" />
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                  </div>
+                </div>
+                <Link
+                  to={ADMIN_ROUTES.USER_APPROVALS}
+                  className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium flex-shrink-0"
+                >
+                  Review
+                </Link>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: full table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="text-left text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
@@ -201,6 +224,7 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </Card>
 
