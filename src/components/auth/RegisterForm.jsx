@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card, Button, Input } from '../common';
 import GoogleSignInButton from './GoogleSignInButton';
 import PasswordInput from './PasswordInput';
+import TurnstileWidget from './TurnstileWidget';
 import { validationRules } from '../../utils/validators';
 import { getPasswordStrength } from '../../utils/validators';
 import { PUBLIC_ROUTES } from '../../config/routes';
@@ -99,6 +100,8 @@ export default function RegisterForm() {
   const { registerWithEmail, signInWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState(null);
+  const turnstileRef = useRef(null);
 
   const {
     register,
@@ -111,6 +114,10 @@ export default function RegisterForm() {
   const confirmPassword = watch('confirmPassword', '');
 
   const onSubmit = async (data) => {
+    if (!turnstileToken) {
+      toast.error('Please complete the security check.');
+      return;
+    }
     setIsLoading(true);
     const result = await registerWithEmail(
       data.email,
@@ -119,6 +126,8 @@ export default function RegisterForm() {
       data.phone
     );
     setIsLoading(false);
+    turnstileRef.current?.reset();
+    setTurnstileToken(null);
 
     if (result.success) {
       toast.success('Account created! Please verify your email.');
@@ -231,11 +240,18 @@ export default function RegisterForm() {
           <ConfirmPasswordStatus password={password} confirmPassword={confirmPassword} />
         </div>
 
+        <TurnstileWidget
+          ref={turnstileRef}
+          onSuccess={setTurnstileToken}
+          onExpire={() => setTurnstileToken(null)}
+          onError={() => setTurnstileToken(null)}
+        />
+
         <Button
           type="submit"
           fullWidth
           isLoading={isLoading}
-          disabled={isGoogleLoading}
+          disabled={isGoogleLoading || !turnstileToken}
         >
           Create Account
         </Button>

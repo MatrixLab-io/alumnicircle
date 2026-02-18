@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card, Button, Input } from '../common';
 import GoogleSignInButton from './GoogleSignInButton';
 import PasswordInput from './PasswordInput';
+import TurnstileWidget from './TurnstileWidget';
 import { validationRules } from '../../utils/validators';
 import { PUBLIC_ROUTES, USER_ROUTES, ADMIN_ROUTES } from '../../config/routes';
 
@@ -17,6 +18,8 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isReapproving, setIsReapproving] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState(null);
+  const turnstileRef = useRef(null);
 
   // 'accountRemoved' = email/password user deleted by admin
   // 'noProfile' = Google user with no Firestore profile (could be new or deleted)
@@ -57,9 +60,15 @@ export default function LoginForm() {
   };
 
   const onSubmit = async (data) => {
+    if (!turnstileToken) {
+      toast.error('Please complete the security check.');
+      return;
+    }
     setIsLoading(true);
     const result = await loginWithEmail(data.email, data.password);
     setIsLoading(false);
+    turnstileRef.current?.reset();
+    setTurnstileToken(null);
 
     if (result.accountRemoved) {
       lastCredentials.current = { email: data.email, password: data.password };
@@ -256,11 +265,18 @@ export default function LoginForm() {
           </Link>
         </div>
 
+        <TurnstileWidget
+          ref={turnstileRef}
+          onSuccess={setTurnstileToken}
+          onExpire={() => setTurnstileToken(null)}
+          onError={() => setTurnstileToken(null)}
+        />
+
         <Button
           type="submit"
           fullWidth
           isLoading={isLoading}
-          disabled={isGoogleLoading}
+          disabled={isGoogleLoading || !turnstileToken}
         >
           Sign In
         </Button>

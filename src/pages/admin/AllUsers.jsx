@@ -236,7 +236,53 @@ export default function AllUsers() {
         />
       ) : (
         <Card padding="none">
-          <div className="overflow-x-auto">
+          {/* Mobile: stacked cards */}
+          <div className="sm:hidden divide-y divide-gray-200 dark:divide-gray-700 px-4">
+            {filteredUsers.map((user) => {
+              const canDelete = isSuperAdmin && isDeletable(user);
+              return (
+                <div key={user.uid} className="py-3 flex items-center gap-3">
+                  {isSuperAdmin && (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(user.uid)}
+                      onChange={() => canDelete && toggleSelect(user.uid)}
+                      disabled={!canDelete}
+                      className="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500 flex-shrink-0"
+                    />
+                  )}
+                  <Avatar src={user.photo} name={user.name} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white truncate">
+                      {user.name}
+                      {user.uid === userProfile?.uid && (
+                        <span className="ml-1.5 text-xs text-primary-600 dark:text-primary-400">(You)</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant={getStatusColor(user.status)} size="sm">{user.status}</Badge>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">{getRoleDisplayName(user.role)}</span>
+                    </div>
+                  </div>
+                  {canDelete && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => openDeleteConfirm(user.uid)}
+                      isLoading={processingId === user.uid}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 flex-shrink-0"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop: full table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
