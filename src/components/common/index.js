@@ -15,3 +15,4 @@ export { default as ErrorBoundary } from './ErrorBoundary';
 export { default as DateTimePicker } from './DateTimePicker';
 export { default as FeedbackWidget } from './FeedbackWidget';
 export { default as ConfirmDialog } from './ConfirmDialog';
+export { default as WhatsNew } from './WhatsNew';

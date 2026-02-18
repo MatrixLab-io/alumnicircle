@@ -11,7 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemeToggle } from '../theme';
-import { Avatar, Badge } from '../common';
+import { Avatar, Badge, WhatsNew } from '../common';
 import { cn } from '../../utils/helpers';
 import { USER_ROUTES, ADMIN_ROUTES, PUBLIC_ROUTES } from '../../config/routes';
 import { APP_NAME } from '../../config/constants';
@@ -104,6 +104,7 @@ export default function Navbar() {
               {/* Right side */}
               <div className="flex items-center gap-3">
                 <ThemeToggle />
+                {user && <WhatsNew />}
 
                 {user ? (
                   <Menu as="div" className="relative">
