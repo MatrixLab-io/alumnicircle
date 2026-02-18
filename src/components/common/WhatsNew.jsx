@@ -75,17 +75,17 @@ function ReleaseNotes({ body }) {
 
 export default function WhatsNew() {
   const [isOpen, setIsOpen] = useState(false);
-  const [release, setRelease] = useState(null);
+  const [releases, setReleases] = useState([]);
   const [hasNew, setHasNew] = useState(false);
 
   useEffect(() => {
-    fetch(`https://api.github.com/repos/${REPO}/releases/latest`)
+    fetch(`https://api.github.com/repos/${REPO}/releases?per_page=3`)
       .then((r) => r.json())
       .then((data) => {
-        if (data?.tag_name) {
-          setRelease(data);
+        if (Array.isArray(data) && data.length > 0) {
+          setReleases(data);
           const seen = localStorage.getItem(SEEN_KEY);
-          if (seen !== data.tag_name) setHasNew(true);
+          if (seen !== data[0].tag_name) setHasNew(true);
         }
       })
       .catch(() => {});
@@ -93,8 +93,8 @@ export default function WhatsNew() {
 
   const handleOpen = () => {
     setIsOpen(true);
-    if (release?.tag_name) {
-      localStorage.setItem(SEEN_KEY, release.tag_name);
+    if (releases[0]?.tag_name) {
+      localStorage.setItem(SEEN_KEY, releases[0].tag_name);
       setHasNew(false);
     }
   };
@@ -146,9 +146,9 @@ export default function WhatsNew() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 shadow-2xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform rounded-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 shadow-2xl transition-all overflow-hidden">
                   {/* Header */}
-                  <div className="flex items-center justify-between px-6 pt-6 pb-4">
+                  <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-[0_0_15px_rgba(147,51,234,0.4)]">
                         <SparklesIcon className="h-5 w-5 text-white" />
@@ -157,11 +157,9 @@ export default function WhatsNew() {
                         <Dialog.Title className="text-base font-bold text-gray-900 dark:text-white">
                           What's New
                         </Dialog.Title>
-                        {release && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {release.tag_name} · {formatDate(release.published_at)}
-                          </p>
-                        )}
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Latest 3 releases
+                        </p>
                       </div>
                     </div>
                     <button
@@ -173,28 +171,36 @@ export default function WhatsNew() {
                     </button>
                   </div>
 
-                  {/* Version badge */}
-                  {release && (
-                    <div className="px-6 pb-4">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary-500" />
-                        Latest Release: {release.name || release.tag_name}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Release notes */}
-                  <div className="px-6 pb-6">
-                    {release ? (
-                      release.body ? (
-                        <div className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-4">
-                          <ReleaseNotes body={release.body} />
+                  {/* Releases list */}
+                  <div className="overflow-y-auto max-h-[70vh] px-6 py-4 space-y-4">
+                    {releases.length > 0 ? (
+                      releases.map((release, index) => (
+                        <div key={release.id} className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-4">
+                          {/* Release header */}
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300">
+                              <span className="h-1.5 w-1.5 rounded-full bg-primary-500" />
+                              {release.name || release.tag_name}
+                              {index === 0 && (
+                                <span className="ml-1 px-1.5 py-0.5 rounded bg-primary-500 text-white text-[10px] font-bold">
+                                  LATEST
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                              {formatDate(release.published_at)}
+                            </span>
+                          </div>
+                          {/* Release notes */}
+                          {release.body ? (
+                            <ReleaseNotes body={release.body} />
+                          ) : (
+                            <p className="text-sm text-gray-400 dark:text-gray-500 italic">
+                              No release notes.
+                            </p>
+                          )}
                         </div>
-                      ) : (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                          No release notes available.
-                        </p>
-                      )
+                      ))
                     ) : (
                       <div className="flex justify-center py-6">
                         <div className="h-5 w-5 rounded-full border-2 border-primary-500 border-t-transparent animate-spin" />
