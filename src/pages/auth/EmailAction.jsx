@@ -55,6 +55,15 @@ export default function EmailAction() {
         // Add small delay to prevent flash during double-mount in dev mode
         await new Promise(resolve => setTimeout(resolve, 300));
 
+        // If already verified, show a specific message instead of re-processing
+        if (auth.currentUser) {
+          await auth.currentUser.reload();
+          if (auth.currentUser.emailVerified) {
+            setStatus('already-verified');
+            return;
+          }
+        }
+
         // Verify the email
         await applyActionCode(auth, code);
 
@@ -92,9 +101,7 @@ export default function EmailAction() {
           await auth.currentUser.reload();
           if (auth.currentUser.emailVerified) {
             await updateDoc(doc(db, 'users', auth.currentUser.uid), { emailVerified: true });
-            setStatus('success');
-            setMessage('Your email has been successfully verified!');
-            setCountdown(5);
+            setStatus('already-verified');
             return;
           }
         }
@@ -132,6 +139,23 @@ export default function EmailAction() {
                 <p className="text-gray-600 dark:text-gray-400">
                   Please wait while we verify your email address.
                 </p>
+              </>
+            )}
+
+            {status === 'already-verified' && (
+              <>
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <CheckCircleIcon className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  Already Verified
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Your email address is already verified. You can sign in to your account.
+                </p>
+                <Button onClick={() => navigate('/login')}>
+                  Go to Sign In
+                </Button>
               </>
             )}
 
