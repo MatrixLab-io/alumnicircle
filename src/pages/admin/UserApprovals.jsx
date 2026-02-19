@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { CheckIcon, XMarkIcon, UserIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, XMarkIcon, UserIcon, ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
 import { Card, Button, Spinner, EmptyState, Avatar, Badge, ConfirmDialog } from '../../components/common';
+import AuthProviderBadge from '../../components/admin/AuthProviderBadge';
 import { getPendingUsers, approveUser, rejectUser } from '../../services/user.service';
 import { formatDate } from '../../utils/helpers';
 import { APP_NAME } from '../../config/constants';
@@ -121,6 +122,15 @@ export default function UserApprovals() {
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                       Registered {formatDate(user.createdAt)}
                     </p>
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <AuthProviderBadge provider={user.authProvider} />
+                      {user.authProvider === 'email' && !user.emailVerified && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                          <ExclamationTriangleIcon className="h-3 w-3" />
+                          Email not verified
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 

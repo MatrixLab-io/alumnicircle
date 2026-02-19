@@ -39,6 +39,12 @@ export default function Navbar() {
     ...(isSuperAdmin ? [{ name: 'Manage Admins', href: ADMIN_ROUTES.MANAGE_ADMINS }] : []),
   ];
 
+  const adminNavDesktop = [
+    { name: 'Admin Dashboard', href: ADMIN_ROUTES.DASHBOARD },
+    { name: 'User Approvals', href: ADMIN_ROUTES.USER_APPROVALS },
+    { name: 'Manage Events', href: ADMIN_ROUTES.MANAGE_EVENTS },
+  ];
+
   const handleLogout = async () => {
     await logout();
     navigate(PUBLIC_ROUTES.LOGIN);
@@ -87,7 +93,7 @@ export default function Navbar() {
                   {isAdmin && (
                     <>
                       <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-2" />
-                      {adminNavigation.map((item) => (
+                      {adminNavDesktop.map((item) => (
                         <Link
                           key={item.name}
                           to={item.href}

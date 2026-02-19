@@ -89,6 +89,7 @@ export function AuthProvider({ children }) {
       approvedAt: null,
       approvedBy: null,
       lastLoginAt: null,
+      emailVerified: data.authProvider === 'google',
     };
 
     await setDoc(userRef, profileData);
@@ -232,10 +233,10 @@ export function AuthProvider({ children }) {
         return { success: false, error: msg };
       }
 
-      // Update last login
-      await updateDoc(doc(db, COLLECTIONS.USERS, result.user.uid), {
-        lastLoginAt: serverTimestamp(),
-      });
+      // Update last login (and mark email verified if confirmed)
+      const loginUpdate = { lastLoginAt: serverTimestamp() };
+      if (result.user.emailVerified) loginUpdate.emailVerified = true;
+      await updateDoc(doc(db, COLLECTIONS.USERS, result.user.uid), loginUpdate);
 
       return { success: true, user: result.user, profile };
     } catch (err) {
@@ -274,6 +275,7 @@ export function AuthProvider({ children }) {
         approvedAt: null,
         approvedBy: null,
         lastLoginAt: serverTimestamp(),
+        emailVerified: false,
       };
       await setDoc(userRef, profileData);
       await fetchUserProfile(firebaseUser.uid);
@@ -321,6 +323,7 @@ export function AuthProvider({ children }) {
         approvedAt: null,
         approvedBy: null,
         lastLoginAt: serverTimestamp(),
+        emailVerified: true,
       };
       await setDoc(userRef, profileData);
       await fetchUserProfile(firebaseUser.uid);

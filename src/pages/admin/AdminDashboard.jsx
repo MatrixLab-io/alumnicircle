@@ -7,6 +7,7 @@ import {
   UserPlusIcon,
   CheckCircleIcon,
   ArrowPathIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import AuthProviderBadge from '../../components/admin/AuthProviderBadge';
@@ -168,8 +169,14 @@ export default function AdminDashboard() {
                   <div className="min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white truncate">{user.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
-                    <div className="mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <AuthProviderBadge provider={user.authProvider} />
+                      {user.authProvider === 'email' && !user.emailVerified && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                          <ExclamationTriangleIcon className="h-3 w-3" />
+                          Not verified
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -214,7 +221,15 @@ export default function AdminDashboard() {
                       {user.phone}
                     </td>
                     <td className="py-3">
-                      <AuthProviderBadge provider={user.authProvider} />
+                      <div className="flex flex-col gap-1">
+                        <AuthProviderBadge provider={user.authProvider} />
+                        {user.authProvider === 'email' && !user.emailVerified && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                            <ExclamationTriangleIcon className="h-3 w-3" />
+                            Not verified
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 text-gray-600 dark:text-gray-400">
                       {formatDate(user.createdAt)}
