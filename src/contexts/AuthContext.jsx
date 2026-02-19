@@ -7,6 +7,7 @@ import {
   signOut,
   sendEmailVerification,
   sendPasswordResetEmail,
+  confirmPasswordReset,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../config/firebase';
@@ -367,13 +368,25 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Reset password
+  // Reset password (send email)
   const resetPassword = async (email) => {
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, email, actionCodeSettings);
       return { success: true };
     } catch (err) {
       logError('Password Reset', err);
+      const errorMessage = getErrorMessage(err);
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // Confirm new password using oobCode from reset email link
+  const confirmNewPassword = async (oobCode, newPassword) => {
+    try {
+      await confirmPasswordReset(auth, oobCode, newPassword);
+      return { success: true };
+    } catch (err) {
+      logError('Confirm Password Reset', err);
       const errorMessage = getErrorMessage(err);
       return { success: false, error: errorMessage };
     }
@@ -407,6 +420,7 @@ export function AuthProvider({ children }) {
     logout,
     resendVerificationEmail,
     resetPassword,
+    confirmNewPassword,
     refreshProfile,
     isAdmin,
     isSuperAdmin,

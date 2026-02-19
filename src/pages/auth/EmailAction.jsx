@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { applyActionCode } from 'firebase/auth';
+import { doc, updateDoc } from 'firebase/firestore';
 import { Helmet } from 'react-helmet-async';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
-import { auth } from '../../config/firebase';
+import { auth, db } from '../../config/firebase';
 import { Card, Button, Spinner } from '../../components/common';
 import { APP_NAME } from '../../config/constants';
 import { getErrorMessage, logError } from '../../utils/errorMessages';
@@ -60,6 +61,10 @@ export default function EmailAction() {
         // Force reload the current user to get updated emailVerified status
         if (auth.currentUser) {
           await auth.currentUser.reload();
+          // Sync to Firestore — onAuthStateChanged won't fire again since auth state didn't change
+          if (auth.currentUser.emailVerified) {
+            await updateDoc(doc(db, 'users', auth.currentUser.uid), { emailVerified: true });
+          }
         }
 
         // Set success state - countdown will handle redirect
@@ -86,7 +91,7 @@ export default function EmailAction() {
         if (auth.currentUser) {
           await auth.currentUser.reload();
           if (auth.currentUser.emailVerified) {
-            // Email is verified, show success instead of error
+            await updateDoc(doc(db, 'users', auth.currentUser.uid), { emailVerified: true });
             setStatus('success');
             setMessage('Your email has been successfully verified!');
             setCountdown(5);

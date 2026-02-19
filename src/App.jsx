@@ -23,6 +23,7 @@ import Register from './pages/auth/Register';
 import VerifyEmail from './pages/auth/VerifyEmail';
 import PendingApproval from './pages/auth/PendingApproval';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
 import EmailAction from './pages/auth/EmailAction';
 
 // User Pages
@@ -118,6 +119,7 @@ export default function App() {
                     }
                   />
                   <Route path={PUBLIC_ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+                  <Route path={PUBLIC_ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
                   <Route path={PUBLIC_ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
                   <Route path={PUBLIC_ROUTES.PENDING_APPROVAL} element={<PendingApproval />} />
                 </Route>
