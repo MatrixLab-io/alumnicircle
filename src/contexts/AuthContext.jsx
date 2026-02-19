@@ -101,7 +101,12 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
-        await fetchUserProfile(firebaseUser.uid);
+        const profile = await fetchUserProfile(firebaseUser.uid);
+        // Sync emailVerified to Firestore if Firebase Auth says verified but Firestore doesn't
+        if (profile && firebaseUser.emailVerified && !profile.emailVerified) {
+          await updateDoc(doc(db, COLLECTIONS.USERS, firebaseUser.uid), { emailVerified: true });
+          setUserProfile((prev) => prev ? { ...prev, emailVerified: true } : prev);
+        }
       } else {
         setUser(null);
         setUserProfile(null);
