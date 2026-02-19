@@ -19,7 +19,7 @@ import { APP_NAME } from '../../config/constants';
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, userProfile, logout, isAdmin } = useAuth();
+  const { user, userProfile, logout, isAdmin, isSuperAdmin } = useAuth();
 
   const userNavigation = [
     { name: 'Dashboard', href: USER_ROUTES.DASHBOARD },
@@ -31,7 +31,12 @@ export default function Navbar() {
   const adminNavigation = [
     { name: 'Admin Dashboard', href: ADMIN_ROUTES.DASHBOARD },
     { name: 'User Approvals', href: ADMIN_ROUTES.USER_APPROVALS },
+    { name: 'All Users', href: ADMIN_ROUTES.ALL_USERS },
     { name: 'Manage Events', href: ADMIN_ROUTES.MANAGE_EVENTS },
+    { name: 'Archived Events', href: ADMIN_ROUTES.ARCHIVED_EVENTS },
+    { name: 'Create Event', href: ADMIN_ROUTES.CREATE_EVENT },
+    { name: 'Activity Log', href: ADMIN_ROUTES.ACTIVITY_LOG },
+    ...(isSuperAdmin ? [{ name: 'Manage Admins', href: ADMIN_ROUTES.MANAGE_ADMINS }] : []),
   ];
 
   const handleLogout = async () => {
@@ -283,6 +288,14 @@ export default function Navbar() {
                         {item.name}
                       </Disclosure.Button>
                     ))}
+                    <div className="h-px bg-gray-200 dark:bg-gray-700 my-2" />
+                    <Disclosure.Button
+                      as={Link}
+                      to={USER_ROUTES.DASHBOARD}
+                      className="block px-3 py-2 rounded-lg text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      Back to User View
+                    </Disclosure.Button>
                   </>
                 )}
               </div>
