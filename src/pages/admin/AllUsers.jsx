@@ -9,6 +9,7 @@ import { SearchBar } from '../../components/directory';
 import { getAllUsers, deleteUser, deleteUsers } from '../../services/user.service';
 import { formatDate, getStatusColor, getRoleDisplayName } from '../../utils/helpers';
 import { APP_NAME, USER_STATUS, USER_ROLES } from '../../config/constants';
+import AuthProviderBadge from '../../components/admin/AuthProviderBadge';
 
 export default function AllUsers() {
   const { userProfile, isSuperAdmin } = useAuth();
@@ -260,9 +261,10 @@ export default function AllUsers() {
                       )}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <Badge variant={getStatusColor(user.status)} size="sm">{user.status}</Badge>
                       <span className="text-xs text-gray-400 dark:text-gray-500">{getRoleDisplayName(user.role)}</span>
+                      <AuthProviderBadge provider={user.authProvider} />
                     </div>
                   </div>
                   {canDelete && (
@@ -301,6 +303,9 @@ export default function AllUsers() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Contact
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Provider
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
@@ -351,6 +356,9 @@ export default function AllUsers() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-white">{user.email}</div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">{user.phone}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <AuthProviderBadge provider={user.authProvider} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Badge variant={getStatusColor(user.status)}>
