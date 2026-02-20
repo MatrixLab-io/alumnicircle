@@ -15,7 +15,7 @@ import {
 import { db } from '../config/firebase';
 import { uploadImage } from './cloudinary.service';
 import { sendApprovalEmail } from './email.service';
-import { COLLECTIONS, USER_STATUS, ITEMS_PER_PAGE, ACTIVITY_TYPES } from '../config/constants';
+import { COLLECTIONS, USER_STATUS, USER_ROLES, ITEMS_PER_PAGE, ACTIVITY_TYPES } from '../config/constants';
 import { calculateProfileCompletion } from '../utils/helpers';
 import { logActivity } from './activityLog.service';
 
@@ -320,16 +320,38 @@ export const deleteUsers = async (uids, adminInfo = {}) => {
 export const getUserStats = async () => {
   const usersRef = collection(db, COLLECTIONS.USERS);
 
-  const [totalSnapshot, pendingSnapshot, approvedSnapshot] = await Promise.all([
+  const [totalSnapshot, pendingSnapshot, approvedSnapshot, adminSnapshot] = await Promise.all([
     getDocs(usersRef),
     getDocs(query(usersRef, where('status', '==', USER_STATUS.PENDING))),
     getDocs(query(usersRef, where('status', '==', USER_STATUS.APPROVED))),
+    getDocs(query(usersRef, where('role', 'in', [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN]))),
   ]);
+
+  const approvedDocs = approvedSnapshot.docs.map((d) => d.data());
+  const approvedUnverified = approvedDocs.filter(
+    (u) => u.authProvider === 'email' && !u.emailVerified
+  ).length;
 
   return {
     total: totalSnapshot.size,
     pending: pendingSnapshot.size,
     approved: approvedSnapshot.size,
+    admins: adminSnapshot.size,
+    approvedUnverified,
     rejected: totalSnapshot.size - pendingSnapshot.size - approvedSnapshot.size,
   };
+};
+
+/**
+ * Get latest approved members (ordered by createdAt — uses existing index)
+ */
+export const getLatestMembers = async (count = 5) => {
+  const q = query(
+    collection(db, COLLECTIONS.USERS),
+    where('status', '==', USER_STATUS.APPROVED),
+    orderBy('createdAt', 'desc'),
+    limit(count)
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((doc) => ({ uid: doc.id, ...doc.data() }));
 };

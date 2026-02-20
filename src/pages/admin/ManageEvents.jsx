@@ -11,15 +11,17 @@ import {
   ArrowPathIcon,
   MapPinIcon,
   CurrencyDollarIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
 import { Card, Button, Spinner, EmptyState, Badge, Dropdown, ConfirmDialog } from '../../components/common';
-import { getAllEvents, deleteEvent, archiveEvent, getEventById, getEventParticipants } from '../../services/event.service';
+import { getAllEvents, deleteEvent, archiveEvent, getEventById, getEventParticipants, syncEventStatuses, publishEvent } from '../../services/event.service';
 import { formatDate, formatCurrency, getEventLiveStatus } from '../../utils/helpers';
 import { formatEventLocation } from '../../utils/formatters';
 import EventCountdown from '../../components/events/EventCountdown';
+import AdminEventModal from '../../components/admin/AdminEventModal';
 import { ADMIN_ROUTES, getEditEventRoute, getEventParticipantsRoute } from '../../config/routes';
 import { APP_NAME, EVENT_STATUS, PARTICIPANT_STATUS } from '../../config/constants';
 import { exportToExcel, formatParticipantsForExport } from '../../utils/exportUtils';
@@ -32,6 +34,8 @@ export default function ManageEvents() {
   const [processingId, setProcessingId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [confirmState, setConfirmState] = useState({ open: false, type: null, eventId: null });
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -47,7 +51,8 @@ export default function ManageEvents() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const result = await getAllEvents({ includeCompleted: true });
+      await syncEventStatuses().catch(() => {});
+      const result = await getAllEvents({ includeCompleted: true, includeDraft: true });
       setEvents(result);
     } catch (error) {
       toast.error('Failed to load events');
@@ -103,6 +108,41 @@ export default function ManageEvents() {
     }
   };
 
+  const executePublish = async (eventId) => {
+    setProcessingId(eventId);
+    try {
+      const { status } = await publishEvent(eventId);
+      setEvents((prev) => prev.map((e) => e.id === eventId ? { ...e, status } : e));
+      // Update selected event in modal if open
+      setSelectedEvent((prev) => prev?.id === eventId ? { ...prev, status } : prev);
+      toast.success('Event published');
+    } catch (error) {
+      toast.error('Failed to publish event');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const openEventModal = (event) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+  };
+
+  const closeEventModal = () => {
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+  };
+
+  const handleModalDelete = (eventId) => {
+    closeEventModal();
+    openConfirm('delete', eventId);
+  };
+
+  const handleModalArchive = (eventId) => {
+    closeEventModal();
+    openConfirm('archive', eventId);
+  };
+
   const renderStatusBadge = (event) => {
     const ls = getEventLiveStatus(event);
     return <Badge variant={ls.variant} dot={ls.dot}>{ls.label}</Badge>;
@@ -154,7 +194,7 @@ export default function ManageEvents() {
             const ls = getEventLiveStatus(event);
             const isFree = !event.registrationFee || event.registrationFee === 0;
             return (
-            <Card key={event.id}>
+            <Card key={event.id} hover className="cursor-pointer" onClick={() => openEventModal(event)}>
               <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                 {/* Left: banner + info */}
                 <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -225,13 +265,24 @@ export default function ManageEvents() {
                 </div>
 
                 {/* Right: actions */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <Link to={getEventParticipantsRoute(event.id)}>
-                    <Button size="sm" variant="outline">
-                      <UsersIcon className="h-4 w-4 mr-1" />
-                      Participants
+                <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  {event.status === EVENT_STATUS.DRAFT ? (
+                    <Button
+                      size="sm"
+                      onClick={() => executePublish(event.id)}
+                      isLoading={processingId === event.id}
+                      leftIcon={<CheckCircleIcon className="h-4 w-4" />}
+                    >
+                      Publish
                     </Button>
-                  </Link>
+                  ) : (
+                    <Link to={getEventParticipantsRoute(event.id)}>
+                      <Button size="sm" variant="outline">
+                        <UsersIcon className="h-4 w-4 mr-1" />
+                        Participants
+                      </Button>
+                    </Link>
+                  )}
 
                   <Dropdown
                     trigger={
@@ -249,12 +300,14 @@ export default function ManageEvents() {
                     >
                       Edit Event
                     </Dropdown.Item>
-                    <Dropdown.Item
-                      icon={<ArchiveBoxIcon className="h-4 w-4" />}
-                      onClick={() => openConfirm('archive', event.id)}
-                    >
-                      Archive Event
-                    </Dropdown.Item>
+                    {event.status !== EVENT_STATUS.DRAFT && (
+                      <Dropdown.Item
+                        icon={<ArchiveBoxIcon className="h-4 w-4" />}
+                        onClick={() => openConfirm('archive', event.id)}
+                      >
+                        Archive Event
+                      </Dropdown.Item>
+                    )}
                     <Dropdown.Divider />
                     <Dropdown.Item
                       icon={<TrashIcon className="h-4 w-4" />}
@@ -271,6 +324,19 @@ export default function ManageEvents() {
           })}
         </div>
       )}
+
+      {/* Event Detail Modal */}
+      <AdminEventModal
+        event={selectedEvent}
+        isOpen={isModalOpen}
+        onClose={closeEventModal}
+        onPublish={executePublish}
+        onEdit={(id) => { closeEventModal(); navigate(getEditEventRoute(id)); }}
+        onArchive={handleModalArchive}
+        onDelete={handleModalDelete}
+        onParticipants={(id) => { closeEventModal(); navigate(getEventParticipantsRoute(id)); }}
+        processingId={processingId}
+      />
 
       {/* Confirmation Dialog */}
       <ConfirmDialog

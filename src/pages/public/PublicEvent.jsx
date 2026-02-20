@@ -12,7 +12,7 @@ import {
 import { getEventById } from '../../services/event.service';
 import { formatDateTime, formatCurrency, getEventLiveStatus, getEventPaymentMethods, getPaymentMethodLabel } from '../../utils/helpers';
 import { formatEventLocation } from '../../utils/formatters';
-import { APP_NAME } from '../../config/constants';
+import { APP_NAME, APP_URL } from '../../config/constants';
 import { PUBLIC_ROUTES } from '../../config/routes';
 import EventCountdown from '../../components/events/EventCountdown';
 
@@ -85,10 +85,32 @@ export default function PublicEvent() {
     : null;
   const liveStatus = getEventLiveStatus(event);
 
+  const pageUrl = `${APP_URL}/event/${id}/public`;
+  const ogImage = event.banner || `${APP_URL}/og-image.jpg`;
+  const ogDescription = event.description?.slice(0, 200) || `Join us for ${event.title} — an alumni event by ${APP_NAME}.`;
+
   return (
     <>
       <Helmet>
         <title>{event.title} | {APP_NAME}</title>
+        <meta name="description" content={ogDescription} />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:title" content={`${event.title} | ${APP_NAME}`} />
+        <meta property="og:description" content={ogDescription} />
+        <meta property="og:image" content={ogImage} />
+        {!event.banner && <meta property="og:image:width" content="1200" />}
+        {!event.banner && <meta property="og:image:height" content="630" />}
+        <meta property="og:site_name" content={APP_NAME} />
+
+        {/* Twitter / X */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={pageUrl} />
+        <meta name="twitter:title" content={`${event.title} | ${APP_NAME}`} />
+        <meta name="twitter:description" content={ogDescription} />
+        <meta name="twitter:image" content={ogImage} />
       </Helmet>
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -243,16 +265,24 @@ export default function PublicEvent() {
                                   </span>
                                 ))}
                               </div>
-                              {event.bkashNumber && methods.includes('bkash') && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  <span className="font-medium text-gray-700 dark:text-gray-300">bKash:</span> {event.bkashNumber}
-                                </p>
-                              )}
-                              {event.nagadNumber && methods.includes('nagad') && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  <span className="font-medium text-gray-700 dark:text-gray-300">Nagad:</span> {event.nagadNumber}
-                                </p>
-                              )}
+                              {methods.includes('bkash') && (() => {
+                                const nums = Array.isArray(event.bkashNumbers) && event.bkashNumbers.length > 0
+                                  ? event.bkashNumbers : event.bkashNumber ? [event.bkashNumber] : [];
+                                return nums.map((n, i) => (
+                                  <p key={i} className="text-sm text-gray-600 dark:text-gray-400">
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">bKash{nums.length > 1 ? ` ${i + 1}` : ''}:</span> {n}
+                                  </p>
+                                ));
+                              })()}
+                              {methods.includes('nagad') && (() => {
+                                const nums = Array.isArray(event.nagadNumbers) && event.nagadNumbers.length > 0
+                                  ? event.nagadNumbers : event.nagadNumber ? [event.nagadNumber] : [];
+                                return nums.map((n, i) => (
+                                  <p key={i} className="text-sm text-gray-600 dark:text-gray-400">
+                                    <span className="font-medium text-gray-700 dark:text-gray-300">Nagad{nums.length > 1 ? ` ${i + 1}` : ''}:</span> {n}
+                                  </p>
+                                ));
+                              })()}
                             </div>
                           );
                         })()}

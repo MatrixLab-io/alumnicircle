@@ -34,6 +34,8 @@ export default function EditEvent() {
   const [dateErrors, setDateErrors] = useState({ eventDate: '', registrationDeadline: '' });
   const [contactPersons, setContactPersons] = useState([{ name: '', phone: '' }]);
   const [contactErrors, setContactErrors] = useState([]);
+  const [bkashNumbers, setBkashNumbers] = useState(['']);
+  const [nagadNumbers, setNagadNumbers] = useState(['']);
   const [eventStatus, setEventStatus] = useState(EVENT_STATUS.UPCOMING);
   const fileInputRef = useRef(null);
 
@@ -71,8 +73,6 @@ export default function EditEvent() {
         locationCountry: isLegacyLocation ? 'Bangladesh' : (loc.country || 'Bangladesh'),
         participantLimit: event.participantLimit || '',
         registrationFee: event.registrationFee || '',
-        bkashNumber: event.bkashNumber || '',
-        nagadNumber: event.nagadNumber || '',
       });
 
       setEventDate(toDate(event.eventDate || event.startDate));
@@ -88,6 +88,17 @@ export default function EditEvent() {
       } else {
         setSelectedMethods([PAYMENT_METHODS.BKASH]);
       }
+      // Pre-fill payment numbers (new array format or legacy single string)
+      setBkashNumbers(
+        Array.isArray(event.bkashNumbers) && event.bkashNumbers.length > 0
+          ? event.bkashNumbers
+          : event.bkashNumber ? [event.bkashNumber] : ['']
+      );
+      setNagadNumbers(
+        Array.isArray(event.nagadNumbers) && event.nagadNumbers.length > 0
+          ? event.nagadNumbers
+          : event.nagadNumber ? [event.nagadNumber] : ['']
+      );
       setEventStatus(event.status || EVENT_STATUS.UPCOMING);
       if (event.banner) setBannerPreview(event.banner);
       if (event.contactPersons?.length > 0) {
@@ -152,6 +163,11 @@ export default function EditEvent() {
     );
   };
 
+  const addNumber = (setter) => setter((prev) => [...prev, '']);
+  const removeNumber = (setter, index) => setter((prev) => prev.filter((_, i) => i !== index));
+  const updateNumber = (setter, index, value) =>
+    setter((prev) => prev.map((n, i) => (i === index ? value : n)));
+
   const onSubmit = async (data) => {
     if (!validateDates()) return;
     if (!validateContactPersons()) return;
@@ -176,8 +192,10 @@ export default function EditEvent() {
         registrationFee: isPaid ? parseFloat(data.registrationFee) : 0,
         paymentMethods: isPaid ? [...selectedMethods] : [],
         paymentMethod: null,
-        bkashNumber: isPaid && selectedMethods.includes(PAYMENT_METHODS.BKASH) ? data.bkashNumber : null,
-        nagadNumber: isPaid && selectedMethods.includes(PAYMENT_METHODS.NAGAD) ? data.nagadNumber : null,
+        bkashNumbers: isPaid && selectedMethods.includes(PAYMENT_METHODS.BKASH)
+          ? bkashNumbers.filter((n) => n.trim()) : [],
+        nagadNumbers: isPaid && selectedMethods.includes(PAYMENT_METHODS.NAGAD)
+          ? nagadNumbers.filter((n) => n.trim()) : [],
         isPublic,
         status: eventStatus,
         contactPersons: contactPersons.filter((cp) => cp.name && cp.phone),
@@ -204,6 +222,7 @@ export default function EditEvent() {
   }
 
   const statusOptions = [
+    { value: EVENT_STATUS.DRAFT, label: 'Draft' },
     { value: EVENT_STATUS.UPCOMING, label: 'Upcoming' },
     { value: EVENT_STATUS.ONGOING, label: 'Ongoing' },
     { value: EVENT_STATUS.COMPLETED, label: 'Completed' },
@@ -423,31 +442,63 @@ export default function EditEvent() {
                 </div>
 
                 {selectedMethods.includes(PAYMENT_METHODS.BKASH) && (
-                  <Input
-                    label="bKash Number"
-                    type="tel"
-                    placeholder="01XXXXXXXXX"
-                    error={errors.bkashNumber?.message}
-                    required
-                    {...register('bkashNumber', {
-                      required: isPaid && selectedMethods.includes(PAYMENT_METHODS.BKASH) ? 'bKash number is required' : false,
-                      validate: (value) => !isPaid || !selectedMethods.includes(PAYMENT_METHODS.BKASH) || !value || isValidPhone(value) || 'Enter a valid BD phone number (01[3-9]XXXXXXXX)',
-                    })}
-                  />
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        bKash Numbers <span className="text-red-500">*</span>
+                      </label>
+                      <button type="button" onClick={() => addNumber(setBkashNumbers)}
+                        className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium">
+                        + Add Number
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {bkashNumbers.map((num, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <input type="tel" placeholder="01XXXXXXXXX" value={num}
+                            onChange={(e) => updateNumber(setBkashNumbers, idx, e.target.value)}
+                            className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                          {bkashNumbers.length > 1 && (
+                            <button type="button" onClick={() => removeNumber(setBkashNumbers, idx)}
+                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {selectedMethods.includes(PAYMENT_METHODS.NAGAD) && (
-                  <Input
-                    label="Nagad Number"
-                    type="tel"
-                    placeholder="01XXXXXXXXX"
-                    error={errors.nagadNumber?.message}
-                    required
-                    {...register('nagadNumber', {
-                      required: isPaid && selectedMethods.includes(PAYMENT_METHODS.NAGAD) ? 'Nagad number is required' : false,
-                      validate: (value) => !isPaid || !selectedMethods.includes(PAYMENT_METHODS.NAGAD) || !value || isValidPhone(value) || 'Enter a valid BD phone number (01[3-9]XXXXXXXX)',
-                    })}
-                  />
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Nagad Numbers <span className="text-red-500">*</span>
+                      </label>
+                      <button type="button" onClick={() => addNumber(setNagadNumbers)}
+                        className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium">
+                        + Add Number
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {nagadNumbers.map((num, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <input type="tel" placeholder="01XXXXXXXXX" value={num}
+                            onChange={(e) => updateNumber(setNagadNumbers, idx, e.target.value)}
+                            className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                          {nagadNumbers.length > 1 && (
+                            <button type="button" onClick={() => removeNumber(setNagadNumbers, idx)}
+                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {selectedMethods.includes(PAYMENT_METHODS.CASH) && (

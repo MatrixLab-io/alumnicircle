@@ -7,12 +7,12 @@ export const isValidEmail = (email) => {
 };
 
 /**
- * Phone validation (Bangladesh format)
- * Valid operators: 013, 014, 015, 016, 017, 018, 019
+ * Phone validation (international, E.164 format from react-phone-number-input)
  */
 export const isValidPhone = (phone) => {
-  const cleaned = phone.replace(/\D/g, '');
-  return /^01[3-9]\d{8}$/.test(cleaned);
+  if (!phone) return false;
+  // E.164 format: + followed by 7-15 digits
+  return /^\+[1-9]\d{6,14}$/.test(phone);
 };
 
 /**
@@ -135,7 +135,7 @@ export const validationRules = {
   phone: {
     required: 'Phone number is required',
     validate: (value) =>
-      isValidPhone(value) || 'Please enter a valid Bangladesh phone number (01XXXXXXXXX)',
+      isValidPhone(value) || 'Please enter a valid phone number',
   },
   password: {
     required: 'Password is required',
@@ -180,6 +180,6 @@ export const validationRules = {
     },
   }),
   contactPhone: {
-    validate: (value) => !value || isValidPhone(value) || 'Please enter a valid Bangladesh phone number (01[3-9]XXXXXXXX)',
+    validate: (value) => !value || isValidPhone(value) || 'Please enter a valid phone number',
   },
 };

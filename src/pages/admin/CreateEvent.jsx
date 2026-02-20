@@ -10,7 +10,7 @@ import { Card, Button, Input, Textarea, Select, Toggle, Spinner, DateTimePicker 
 import { createEvent, uploadEventBanner, updateEvent } from '../../services/event.service';
 import { validationRules, isValidPhone } from '../../utils/validators';
 import { ADMIN_ROUTES } from '../../config/routes';
-import { APP_NAME, PAYMENT_METHODS } from '../../config/constants';
+import { APP_NAME, PAYMENT_METHODS, EVENT_STATUS } from '../../config/constants';
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -26,6 +26,9 @@ export default function CreateEvent() {
   const [dateErrors, setDateErrors] = useState({ eventDate: '', registrationDeadline: '' });
   const [contactPersons, setContactPersons] = useState([{ name: '', phone: '' }]);
   const [contactErrors, setContactErrors] = useState([]);
+  const [bkashNumbers, setBkashNumbers] = useState(['']);
+  const [nagadNumbers, setNagadNumbers] = useState(['']);
+  const submitModeRef = useRef('publish');
   const fileInputRef = useRef(null);
 
   const addContactPerson = () => {
@@ -45,6 +48,7 @@ export default function CreateEvent() {
   const {
     register,
     handleSubmit,
+    getValues,
     watch,
     formState: { errors },
   } = useForm({
@@ -57,8 +61,6 @@ export default function CreateEvent() {
       locationCountry: 'Bangladesh',
       participantLimit: '',
       registrationFee: '',
-      bkashNumber: '',
-      nagadNumber: '',
     },
   });
 
@@ -99,6 +101,63 @@ export default function CreateEvent() {
     );
   };
 
+  const addNumber = (setter) => setter((prev) => [...prev, '']);
+  const removeNumber = (setter, index) => setter((prev) => prev.filter((_, i) => i !== index));
+  const updateNumber = (setter, index, value) =>
+    setter((prev) => prev.map((n, i) => (i === index ? value : n)));
+
+  const saveDraft = async () => {
+    const data = getValues();
+    if (!data.title?.trim()) {
+      toast.error('Event title is required to save as draft');
+      return;
+    }
+    setIsLoading(true);
+    submitModeRef.current = 'draft';
+    try {
+      const eventData = {
+        title: data.title,
+        description: data.description || '',
+        location: {
+          street: data.locationStreet || '',
+          city: data.locationCity || '',
+          postCode: data.locationPostCode || '',
+          country: data.locationCountry || 'Bangladesh',
+        },
+        eventDate: eventDate || null,
+        registrationDeadline: registrationDeadline || null,
+        participantLimit: data.participantLimit ? parseInt(data.participantLimit) : null,
+        registrationFee: isPaid ? (parseFloat(data.registrationFee) || 0) : 0,
+        paymentMethods: isPaid ? [...selectedMethods] : [],
+        paymentMethod: null,
+        bkashNumbers: isPaid && selectedMethods.includes(PAYMENT_METHODS.BKASH)
+          ? bkashNumbers.filter((n) => n.trim()) : [],
+        nagadNumbers: isPaid && selectedMethods.includes(PAYMENT_METHODS.NAGAD)
+          ? nagadNumbers.filter((n) => n.trim()) : [],
+        isPublic,
+        banner: null,
+        contactPersons: contactPersons.filter((cp) => cp.name && cp.phone),
+        status: EVENT_STATUS.DRAFT,
+      };
+      const result = await createEvent(eventData, {
+        uid: userProfile.uid,
+        name: userProfile.name,
+        email: userProfile.email,
+      });
+      if (bannerFile) {
+        const bannerUrl = await uploadEventBanner(result.id, bannerFile);
+        await updateEvent(result.id, { banner: bannerUrl });
+      }
+      toast.success('Draft saved');
+      navigate(ADMIN_ROUTES.MANAGE_EVENTS);
+    } catch (error) {
+      toast.error('Failed to save draft');
+    } finally {
+      setIsLoading(false);
+      submitModeRef.current = 'publish';
+    }
+  };
+
   const onSubmit = async (data) => {
     if (!validateDates()) return;
     if (!validateContactPersons()) return;
@@ -124,8 +183,10 @@ export default function CreateEvent() {
         registrationFee: isPaid ? parseFloat(data.registrationFee) : 0,
         paymentMethods: isPaid ? [...selectedMethods] : [],
         paymentMethod: null,
-        bkashNumber: isPaid && selectedMethods.includes(PAYMENT_METHODS.BKASH) ? data.bkashNumber : null,
-        nagadNumber: isPaid && selectedMethods.includes(PAYMENT_METHODS.NAGAD) ? data.nagadNumber : null,
+        bkashNumbers: isPaid && selectedMethods.includes(PAYMENT_METHODS.BKASH)
+          ? bkashNumbers.filter((n) => n.trim()) : [],
+        nagadNumbers: isPaid && selectedMethods.includes(PAYMENT_METHODS.NAGAD)
+          ? nagadNumbers.filter((n) => n.trim()) : [],
         isPublic,
         banner: null,
         contactPersons: contactPersons.filter((cp) => cp.name && cp.phone),
@@ -330,31 +391,63 @@ export default function CreateEvent() {
                 </div>
 
                 {selectedMethods.includes(PAYMENT_METHODS.BKASH) && (
-                  <Input
-                    label="bKash Number"
-                    type="tel"
-                    placeholder="01XXXXXXXXX"
-                    error={errors.bkashNumber?.message}
-                    required
-                    {...register('bkashNumber', {
-                      required: isPaid && selectedMethods.includes(PAYMENT_METHODS.BKASH) ? 'bKash number is required' : false,
-                      validate: (value) => !isPaid || !selectedMethods.includes(PAYMENT_METHODS.BKASH) || !value || isValidPhone(value) || 'Enter a valid BD phone number (01[3-9]XXXXXXXX)',
-                    })}
-                  />
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        bKash Numbers <span className="text-red-500">*</span>
+                      </label>
+                      <button type="button" onClick={() => addNumber(setBkashNumbers)}
+                        className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium">
+                        + Add Number
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {bkashNumbers.map((num, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <input type="tel" placeholder="01XXXXXXXXX" value={num}
+                            onChange={(e) => updateNumber(setBkashNumbers, idx, e.target.value)}
+                            className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                          {bkashNumbers.length > 1 && (
+                            <button type="button" onClick={() => removeNumber(setBkashNumbers, idx)}
+                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {selectedMethods.includes(PAYMENT_METHODS.NAGAD) && (
-                  <Input
-                    label="Nagad Number"
-                    type="tel"
-                    placeholder="01XXXXXXXXX"
-                    error={errors.nagadNumber?.message}
-                    required
-                    {...register('nagadNumber', {
-                      required: isPaid && selectedMethods.includes(PAYMENT_METHODS.NAGAD) ? 'Nagad number is required' : false,
-                      validate: (value) => !isPaid || !selectedMethods.includes(PAYMENT_METHODS.NAGAD) || !value || isValidPhone(value) || 'Enter a valid BD phone number (01[3-9]XXXXXXXX)',
-                    })}
-                  />
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Nagad Numbers <span className="text-red-500">*</span>
+                      </label>
+                      <button type="button" onClick={() => addNumber(setNagadNumbers)}
+                        className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium">
+                        + Add Number
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {nagadNumbers.map((num, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <input type="tel" placeholder="01XXXXXXXXX" value={num}
+                            onChange={(e) => updateNumber(setNagadNumbers, idx, e.target.value)}
+                            className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                          {nagadNumbers.length > 1 && (
+                            <button type="button" onClick={() => removeNumber(setNagadNumbers, idx)}
+                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {selectedMethods.includes(PAYMENT_METHODS.CASH) && (
@@ -452,8 +545,19 @@ export default function CreateEvent() {
           >
             Cancel
           </Button>
-          <Button type="submit" isLoading={isLoading}>
-            Create Event
+          <Button
+            type="button"
+            variant="outline"
+            onClick={saveDraft}
+            isLoading={isLoading && submitModeRef.current === 'draft'}
+          >
+            Save as Draft
+          </Button>
+          <Button
+            type="submit"
+            isLoading={isLoading && submitModeRef.current === 'publish'}
+          >
+            Publish Event
           </Button>
         </div>
       </form>

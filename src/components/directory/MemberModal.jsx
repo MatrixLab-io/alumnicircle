@@ -3,6 +3,7 @@ import {
   PhoneIcon,
   MapPinIcon,
   BriefcaseIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { Modal, Avatar, Badge, Button } from '../common';
 import { formatProfession, formatAddress } from '../../utils/formatters';
@@ -33,11 +34,17 @@ export default function MemberModal({ member, isOpen, onClose, isAdmin = false }
             </p>
           )}
 
-          <div className="flex justify-center gap-2 mt-3">
+          <div className="flex justify-center gap-2 mt-3 flex-wrap">
             {member.bloodGroup && (
               <Badge variant="red">{member.bloodGroup}</Badge>
             )}
             <Badge variant="blue">Adarsha School - Batch 2003</Badge>
+            {isAdmin && member.authProvider === 'email' && !member.emailVerified && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                <ExclamationTriangleIcon className="h-3 w-3" />
+                Email not verified
+              </span>
+            )}
           </div>
         </div>
 

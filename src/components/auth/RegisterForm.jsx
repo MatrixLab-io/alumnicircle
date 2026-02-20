@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { Card, Button, Input } from '../common';
+import { Card, Button, Input, PhoneInput } from '../common';
 import GoogleSignInButton from './GoogleSignInButton';
 import PasswordInput from './PasswordInput';
 import TurnstileWidget from './TurnstileWidget';
@@ -107,6 +107,7 @@ export default function RegisterForm() {
     register,
     handleSubmit,
     watch,
+    control,
     formState: { errors },
   } = useForm({ mode: 'onChange' });
 
@@ -208,14 +209,20 @@ export default function RegisterForm() {
           {...register('email', validationRules.email)}
         />
 
-        <Input
-          label="Phone Number"
-          type="tel"
-          placeholder="01XXXXXXXXX"
-          helperText="Bangladesh phone number (11 digits)"
-          error={errors.phone?.message}
-          required
-          {...register('phone', validationRules.phone)}
+        <Controller
+          name="phone"
+          control={control}
+          rules={validationRules.phone}
+          render={({ field }) => (
+            <PhoneInput
+              label="Phone Number"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.phone?.message}
+              required
+              placeholder="Phone number"
+            />
+          )}
         />
 
         <div>

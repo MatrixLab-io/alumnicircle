@@ -1,4 +1,4 @@
-import { EnvelopeIcon, PhoneIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
+import { EnvelopeIcon, PhoneIcon, BriefcaseIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { Card, Avatar, Badge } from '../common';
 import { formatProfession } from '../../utils/formatters';
 import { VISIBILITY } from '../../config/constants';
@@ -20,7 +20,7 @@ export default function MemberCard({ member, onClick, isAdmin = false }) {
           size="lg"
         />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h3 className="font-semibold text-gray-900 dark:text-white truncate">
               {member.name}
             </h3>
@@ -28,6 +28,12 @@ export default function MemberCard({ member, onClick, isAdmin = false }) {
               <Badge variant="red" size="sm">
                 {member.bloodGroup}
               </Badge>
+            )}
+            {isAdmin && member.authProvider === 'email' && !member.emailVerified && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                <ExclamationTriangleIcon className="h-3 w-3" />
+                Not verified
+              </span>
             )}
           </div>
 

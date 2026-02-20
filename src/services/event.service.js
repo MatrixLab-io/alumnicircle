@@ -11,6 +11,7 @@ import {
   orderBy,
   serverTimestamp,
   increment,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { uploadImage } from './cloudinary.service';
@@ -26,7 +27,7 @@ export const createEvent = async (eventData, adminInfo = {}) => {
   const docRef = await addDoc(collection(db, COLLECTIONS.EVENTS), {
     ...eventData,
     currentParticipants: 0,
-    status: EVENT_STATUS.UPCOMING,
+    status: eventData.status ?? EVENT_STATUS.UPCOMING,
     createdBy: adminUid,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -133,7 +134,7 @@ export const deleteEvent = async (eventId, adminInfo = {}) => {
  * Get all events
  */
 export const getAllEvents = async (options = {}) => {
-  const { status = null, includeCompleted = false } = options;
+  const { status = null, includeCompleted = false, includeDraft = false } = options;
 
   let q;
   if (status) {
@@ -151,12 +152,18 @@ export const getAllEvents = async (options = {}) => {
   } else {
     q = query(
       collection(db, COLLECTIONS.EVENTS),
-      orderBy('startDate', 'desc')
+      orderBy('createdAt', 'desc')
     );
   }
 
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const events = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+  // Drafts are only visible to admins — filter them out for user-facing calls
+  if (!includeDraft) {
+    return events.filter((e) => e.status !== EVENT_STATUS.DRAFT);
+  }
+  return events;
 };
 
 /**
@@ -416,19 +423,99 @@ export const getArchivedEventById = async (archivedEventId) => {
 /**
  * Get event statistics
  */
+/**
+ * Publish a draft event — determines the correct status from eventDate
+ */
+export const publishEvent = async (eventId) => {
+  const event = await getEventById(eventId);
+  if (!event) throw new Error('Event not found');
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const rawDate = event.eventDate || event.startDate;
+
+  let newStatus = EVENT_STATUS.UPCOMING; // default when no date set
+  if (rawDate) {
+    const eventDate = rawDate.toDate ? rawDate.toDate() : new Date(rawDate);
+    if (eventDate > todayEnd) newStatus = EVENT_STATUS.UPCOMING;
+    else if (eventDate >= todayStart) newStatus = EVENT_STATUS.ONGOING;
+    else newStatus = EVENT_STATUS.COMPLETED;
+  }
+
+  await updateDoc(doc(db, COLLECTIONS.EVENTS, eventId), {
+    status: newStatus,
+    updatedAt: serverTimestamp(),
+  });
+
+  return { success: true, status: newStatus };
+};
+
+/**
+ * Auto-sync event statuses based on eventDate.
+ * - eventDate is today       → ongoing
+ * - eventDate is in the past → completed
+ * - eventDate is in future   → upcoming (corrects any wrongly-set status)
+ * Skips draft and cancelled events.
+ */
+export const syncEventStatuses = async () => {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  // Only look at events that could be stale (upcoming or ongoing)
+  const q = query(
+    collection(db, COLLECTIONS.EVENTS),
+    where('status', 'in', [EVENT_STATUS.UPCOMING, EVENT_STATUS.ONGOING])
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return;
+
+  const batch = writeBatch(db);
+  let changeCount = 0;
+
+  snapshot.docs.forEach((docSnap) => {
+    const event = docSnap.data();
+    const rawDate = event.eventDate || event.startDate;
+    if (!rawDate) return;
+
+    const eventDate = rawDate.toDate ? rawDate.toDate() : new Date(rawDate);
+
+    let newStatus;
+    if (eventDate > todayEnd) {
+      newStatus = EVENT_STATUS.UPCOMING;
+    } else if (eventDate >= todayStart) {
+      newStatus = EVENT_STATUS.ONGOING;
+    } else {
+      newStatus = EVENT_STATUS.COMPLETED;
+    }
+
+    if (newStatus !== event.status) {
+      batch.update(docSnap.ref, { status: newStatus, updatedAt: serverTimestamp() });
+      changeCount++;
+    }
+  });
+
+  if (changeCount > 0) {
+    await batch.commit();
+  }
+};
+
 export const getEventStats = async () => {
   const eventsRef = collection(db, COLLECTIONS.EVENTS);
 
-  const [upcomingSnapshot, ongoingSnapshot, completedSnapshot] = await Promise.all([
+  const [upcomingSnapshot, ongoingSnapshot, completedSnapshot, draftSnapshot] = await Promise.all([
     getDocs(query(eventsRef, where('status', '==', EVENT_STATUS.UPCOMING))),
     getDocs(query(eventsRef, where('status', '==', EVENT_STATUS.ONGOING))),
     getDocs(query(eventsRef, where('status', '==', EVENT_STATUS.COMPLETED))),
+    getDocs(query(eventsRef, where('status', '==', EVENT_STATUS.DRAFT))),
   ]);
 
   return {
     upcoming: upcomingSnapshot.size,
     ongoing: ongoingSnapshot.size,
     completed: completedSnapshot.size,
+    drafts: draftSnapshot.size,
     total: upcomingSnapshot.size + ongoingSnapshot.size + completedSnapshot.size,
   };
 };

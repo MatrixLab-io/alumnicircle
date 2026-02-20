@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
-import { Card, Button, Input, Select } from '../../components/common';
+import { Card, Button, Input, Select, PhoneInput } from '../../components/common';
 import {
   PhotoUpload,
   ProfessionFields,
@@ -19,6 +19,14 @@ import { USER_ROUTES } from '../../config/routes';
 import { APP_NAME, BLOOD_GROUPS, VISIBILITY } from '../../config/constants';
 
 const bloodGroupOptions = BLOOD_GROUPS.map((bg) => ({ value: bg, label: bg }));
+
+// Normalize legacy Bangladesh phone numbers (01XXXXXXXXX → +8801XXXXXXXXX)
+const normalizePhone = (phone) => {
+  if (!phone) return '';
+  if (phone.startsWith('+')) return phone;
+  if (/^01[3-9]\d{8}$/.test(phone)) return `+880${phone.substring(1)}`;
+  return phone;
+};
 
 export default function EditProfile() {
   const navigate = useNavigate();
@@ -36,11 +44,12 @@ export default function EditProfile() {
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm({
     defaultValues: {
       name: userProfile?.name || '',
-      phone: userProfile?.phone || '',
+      phone: normalizePhone(userProfile?.phone || ''),
       bloodGroup: userProfile?.bloodGroup || '',
       profession: {
         type: userProfile?.profession?.type || '',
@@ -194,13 +203,20 @@ export default function EditProfile() {
                 required
                 {...register('name', validationRules.name)}
               />
-              <Input
-                label="Phone Number"
-                type="tel"
-                placeholder="01XXXXXXXXX"
-                error={errors.phone?.message}
-                required
-                {...register('phone', validationRules.phone)}
+              <Controller
+                name="phone"
+                control={control}
+                rules={validationRules.phone}
+                render={({ field }) => (
+                  <PhoneInput
+                    label="Phone Number"
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.phone?.message}
+                    required
+                    placeholder="Phone number"
+                  />
+                )}
               />
               <Input
                 label="Email"

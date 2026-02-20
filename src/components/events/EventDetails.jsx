@@ -136,16 +136,24 @@ export default function EventDetails({ event }) {
                           </span>
                         ))}
                       </div>
-                      {event.bkashNumber && methods.includes('bkash') && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          <span className="font-medium text-gray-700 dark:text-gray-300">bKash:</span> {event.bkashNumber}
-                        </p>
-                      )}
-                      {event.nagadNumber && methods.includes('nagad') && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          <span className="font-medium text-gray-700 dark:text-gray-300">Nagad:</span> {event.nagadNumber}
-                        </p>
-                      )}
+                      {methods.includes('bkash') && (() => {
+                        const nums = Array.isArray(event.bkashNumbers) && event.bkashNumbers.length > 0
+                          ? event.bkashNumbers : event.bkashNumber ? [event.bkashNumber] : [];
+                        return nums.map((n, i) => (
+                          <p key={i} className="text-sm text-gray-600 dark:text-gray-400">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">bKash{nums.length > 1 ? ` ${i + 1}` : ''}:</span> {n}
+                          </p>
+                        ));
+                      })()}
+                      {methods.includes('nagad') && (() => {
+                        const nums = Array.isArray(event.nagadNumbers) && event.nagadNumbers.length > 0
+                          ? event.nagadNumbers : event.nagadNumber ? [event.nagadNumber] : [];
+                        return nums.map((n, i) => (
+                          <p key={i} className="text-sm text-gray-600 dark:text-gray-400">
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Nagad{nums.length > 1 ? ` ${i + 1}` : ''}:</span> {n}
+                          </p>
+                        ));
+                      })()}
                     </div>
                   );
                 })()}

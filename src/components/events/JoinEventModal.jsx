@@ -71,10 +71,17 @@ export default function JoinEventModal({
     return 'Payment Required';
   };
 
-  const getMfsNumber = () => {
-    if (chosenMethod === PAYMENT_METHODS.BKASH) return event.bkashNumber;
-    if (chosenMethod === PAYMENT_METHODS.NAGAD) return event.nagadNumber;
-    return null;
+  // Returns array of numbers for the chosen method (handles legacy single-string too)
+  const getMfsNumbers = () => {
+    if (chosenMethod === PAYMENT_METHODS.BKASH) {
+      if (Array.isArray(event.bkashNumbers) && event.bkashNumbers.length > 0) return event.bkashNumbers;
+      return event.bkashNumber ? [event.bkashNumber] : [];
+    }
+    if (chosenMethod === PAYMENT_METHODS.NAGAD) {
+      if (Array.isArray(event.nagadNumbers) && event.nagadNumbers.length > 0) return event.nagadNumbers;
+      return event.nagadNumber ? [event.nagadNumber] : [];
+    }
+    return [];
   };
 
   return (
@@ -125,12 +132,14 @@ export default function JoinEventModal({
               </div>
 
               <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  {getPaymentMethodLabel(chosenMethod)} Number
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  Send to {getPaymentMethodLabel(chosenMethod)} Number
                 </p>
-                <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                  {getMfsNumber()}
-                </p>
+                {getMfsNumbers().map((num, i) => (
+                  <p key={i} className="text-2xl font-bold text-primary-600 dark:text-primary-400 leading-tight">
+                    {num}
+                  </p>
+                ))}
               </div>
 
               <Input
