@@ -95,9 +95,11 @@ export const getEventLiveStatus = (event) => {
   }
 
   const now = new Date();
-  const start = event.startDate?.toDate ? event.startDate.toDate() : new Date(event.startDate);
-  const end = event.endDate
-    ? (event.endDate.toDate ? event.endDate.toDate() : new Date(event.endDate))
+  const rawStart = event.eventDate || event.startDate;
+  const rawEnd = event.registrationDeadline || event.endDate;
+  const start = rawStart?.toDate ? rawStart.toDate() : new Date(rawStart);
+  const end = rawEnd
+    ? (rawEnd.toDate ? rawEnd.toDate() : new Date(rawEnd))
     : null;
 
   if (end && now > end) {

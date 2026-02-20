@@ -249,7 +249,7 @@ export default function Dashboard() {
                       {event.title}
                     </h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(event.startDate)} - {formatEventLocation(event.location)}
+                      {formatDate(event.eventDate || event.startDate)} - {formatEventLocation(event.location)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">

@@ -266,11 +266,21 @@ export default function EventParticipants() {
                       )}
                     </div>
                     {(participant.transactionId || participant.bkashTransactionId) && (
-                      <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg max-w-full">
-                        <span className="text-xs font-medium text-amber-700 dark:text-amber-300 flex-shrink-0">TxID:</span>
-                        <span className="font-mono text-sm font-bold text-amber-900 dark:text-amber-100 tracking-wider select-all truncate">
-                          {participant.transactionId || participant.bkashTransactionId}
-                        </span>
+                      <div className="mt-2 space-y-1">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg max-w-full">
+                          <span className="text-xs font-medium text-amber-700 dark:text-amber-300 flex-shrink-0">TxID:</span>
+                          <span className="font-mono text-sm font-bold text-amber-900 dark:text-amber-100 tracking-wider select-all truncate">
+                            {participant.transactionId || participant.bkashTransactionId}
+                          </span>
+                        </div>
+                        {participant.paymentSenderNumber && (
+                          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg max-w-full">
+                            <span className="text-xs font-medium text-blue-700 dark:text-blue-300 flex-shrink-0">Sent from:</span>
+                            <span className="font-mono text-sm font-bold text-blue-900 dark:text-blue-100 tracking-wider select-all">
+                              {participant.paymentSenderNumber}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

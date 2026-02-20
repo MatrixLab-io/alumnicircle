@@ -17,6 +17,7 @@ export default function UserApprovals() {
   const [processingId, setProcessingId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [rejectTarget, setRejectTarget] = useState(null);
+  const [unverifiedApproveTarget, setUnverifiedApproveTarget] = useState(null);
 
   useEffect(() => {
     fetchPendingUsers();
@@ -42,6 +43,15 @@ export default function UserApprovals() {
   };
 
   const handleApprove = async (uid) => {
+    const targetUser = users.find((u) => u.uid === uid);
+    if (targetUser?.authProvider === 'email' && !targetUser?.emailVerified) {
+      setUnverifiedApproveTarget(targetUser);
+      return;
+    }
+    await doApprove(uid);
+  };
+
+  const doApprove = async (uid) => {
     setProcessingId(uid);
     try {
       await approveUser(uid, { uid: userProfile.uid, name: userProfile.name, email: userProfile.email });
@@ -149,6 +159,7 @@ export default function UserApprovals() {
                     size="sm"
                     onClick={() => handleApprove(user.uid)}
                     isLoading={processingId === user.uid}
+                    className={user.authProvider === 'email' && !user.emailVerified ? 'opacity-75' : ''}
                   >
                     <CheckIcon className="h-4 w-4 mr-1" />
                     Approve
@@ -168,6 +179,20 @@ export default function UserApprovals() {
         title="Reject user?"
         message={`This will permanently delete ${rejectTarget?.name || 'this user'} (${rejectTarget?.email || ''}) and all their account data. This action cannot be undone.`}
         confirmLabel="Reject & Delete"
+      />
+
+      {/* Unverified Email Warning Dialog */}
+      <ConfirmDialog
+        isOpen={!!unverifiedApproveTarget}
+        onClose={() => setUnverifiedApproveTarget(null)}
+        onConfirm={() => {
+          const uid = unverifiedApproveTarget?.uid;
+          setUnverifiedApproveTarget(null);
+          if (uid) doApprove(uid);
+        }}
+        title="Email not verified"
+        message={`${unverifiedApproveTarget?.name || 'This user'} has not verified their email yet. They won't be able to log in until they do. Are you sure you want to approve now?`}
+        confirmLabel="Approve Anyway"
       />
     </>
   );

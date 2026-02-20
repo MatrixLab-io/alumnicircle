@@ -187,7 +187,7 @@ export default function ManageEvents() {
                       {/* Date chip */}
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                         <CalendarIcon className="h-3.5 w-3.5 text-blue-500" />
-                        <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{formatDate(event.startDate)}</span>
+                        <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{formatDate(event.eventDate || event.startDate)}</span>
                       </div>
 
                       {/* Location chip */}
@@ -218,7 +218,7 @@ export default function ManageEvents() {
 
                       {/* Countdown chip */}
                       {ls.status === 'upcoming' && (
-                        <EventCountdown startDate={event.startDate} compact />
+                        <EventCountdown eventDate={event.eventDate || event.startDate} compact />
                       )}
                     </div>
                   </div>

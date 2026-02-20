@@ -49,7 +49,7 @@ export default function EventDetails({ event }) {
           {liveStatus.status === 'upcoming' && (
             <div className="mt-3">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Starts in</p>
-              <EventCountdown startDate={event.startDate} />
+              <EventCountdown eventDate={event.eventDate || event.startDate} />
             </div>
           )}
         </div>
@@ -62,13 +62,13 @@ export default function EventDetails({ event }) {
             <CalendarIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-blue-600/70 dark:text-blue-400/70">Date & Time</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-blue-600/70 dark:text-blue-400/70">Event Date</p>
             <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
-              {formatDateTime(event.startDate)}
+              {formatDateTime(event.eventDate || event.startDate)}
             </p>
-            {event.endDate && (
+            {(event.registrationDeadline || event.endDate) && (
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                to {formatDateTime(event.endDate)}
+                Registration deadline: {formatDate(event.registrationDeadline || event.endDate)}
               </p>
             )}
           </div>

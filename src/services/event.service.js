@@ -140,13 +140,13 @@ export const getAllEvents = async (options = {}) => {
     q = query(
       collection(db, COLLECTIONS.EVENTS),
       where('status', '==', status),
-      orderBy('startDate', 'asc')
+      orderBy('eventDate', 'asc')
     );
   } else if (!includeCompleted) {
     q = query(
       collection(db, COLLECTIONS.EVENTS),
       where('status', 'in', [EVENT_STATUS.UPCOMING, EVENT_STATUS.ONGOING]),
-      orderBy('startDate', 'asc')
+      orderBy('eventDate', 'asc')
     );
   } else {
     q = query(
@@ -167,7 +167,7 @@ export const getPublicEvents = async () => {
     collection(db, COLLECTIONS.EVENTS),
     where('isPublic', '==', true),
     where('status', 'in', [EVENT_STATUS.UPCOMING, EVENT_STATUS.ONGOING]),
-    orderBy('startDate', 'asc')
+    orderBy('eventDate', 'asc')
   );
 
   const snapshot = await getDocs(q);
@@ -198,7 +198,7 @@ export const joinEvent = async (eventId, userId, userData, paymentInfo = {}) => 
   }
 
   const paymentRequired = event.registrationFee > 0;
-  const { paymentMethod = null, transactionId = null } = paymentInfo;
+  const { paymentMethod = null, transactionId = null, paymentSenderNumber = null } = paymentInfo;
 
   const participantData = {
     eventId,
@@ -210,6 +210,7 @@ export const joinEvent = async (eventId, userId, userData, paymentInfo = {}) => 
     paymentRequired,
     paymentMethod: paymentMethod || null,
     transactionId: transactionId || null,
+    paymentSenderNumber: paymentSenderNumber || null,
     bkashTransactionId: paymentMethod === 'bkash' ? transactionId : null,
     paymentVerified: !paymentRequired,
     paymentVerifiedAt: null,

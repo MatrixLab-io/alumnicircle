@@ -214,7 +214,7 @@ export default function Landing() {
                   <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
                     <div className="flex items-center gap-2">
                       <CalendarIcon className="h-4 w-4" />
-                      {formatDate(event.startDate)}
+                      {formatDate(event.eventDate || event.startDate)}
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPinIcon className="h-4 w-4" />

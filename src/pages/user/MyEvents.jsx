@@ -115,8 +115,8 @@ export default function MyEvents() {
                       {participation.event?.title || 'Event'}
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {participation.event?.startDate
-                        ? formatDate(participation.event.startDate)
+                      {(participation.event?.eventDate || participation.event?.startDate)
+                        ? formatDate(participation.event.eventDate || participation.event.startDate)
                         : 'Date TBD'}
                       {participation.event?.location && ` • ${formatEventLocation(participation.event.location)}`}
                     </p>

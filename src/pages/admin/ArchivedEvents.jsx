@@ -89,7 +89,7 @@ export default function ArchivedEvents() {
                     <Badge variant="gray">Archived</Badge>
                   </div>
                   <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    <span>{formatDate(item.eventData.startDate)}</span>
+                    <span>{formatDate(item.eventData.eventDate || item.eventData.startDate)}</span>
                     <span>{formatEventLocation(item.eventData.location)}</span>
                     <span>{item.totalParticipants} participants</span>
                     <span>

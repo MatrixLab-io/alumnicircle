@@ -16,12 +16,13 @@ function getTimeLeft(targetDate) {
   };
 }
 
-export default function EventCountdown({ startDate, compact = false }) {
-  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(startDate));
+export default function EventCountdown({ eventDate, startDate, compact = false }) {
+  const targetDate = eventDate || startDate;
+  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(targetDate));
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const tl = getTimeLeft(startDate);
+      const tl = getTimeLeft(targetDate);
       if (!tl) {
         clearInterval(timer);
         setTimeLeft(null);
@@ -31,7 +32,7 @@ export default function EventCountdown({ startDate, compact = false }) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [startDate]);
+  }, [targetDate]);
 
   if (!timeLeft) return null;
 

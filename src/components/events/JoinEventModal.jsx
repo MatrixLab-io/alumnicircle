@@ -37,6 +37,7 @@ export default function JoinEventModal({
     const result = await onJoin({
       paymentMethod: chosenMethod,
       transactionId: data.transactionId || null,
+      paymentSenderNumber: data.paymentSenderNumber || null,
     });
     if (result) {
       reset();
@@ -138,6 +139,21 @@ export default function JoinEventModal({
                 error={errors.transactionId?.message}
                 required
                 {...register('transactionId', validationRules.bkashTransactionId)}
+              />
+
+              <Input
+                label="Payment Sent From (Number)"
+                type="tel"
+                placeholder="01XXXXXXXXX"
+                error={errors.paymentSenderNumber?.message}
+                required
+                {...register('paymentSenderNumber', {
+                  required: 'Please enter the number you sent payment from',
+                  pattern: {
+                    value: /^01[3-9]\d{8}$/,
+                    message: 'Enter a valid BD phone number (01XXXXXXXXX)',
+                  },
+                })}
               />
 
               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">

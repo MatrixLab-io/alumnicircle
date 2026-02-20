@@ -41,8 +41,8 @@ export const generateEventPDF = (archivedEvent) => {
 
   const details = [
     ['Location', formatEventLocation(eventData.location) || '-'],
-    ['Start Date', formatTimestamp(eventData.startDate)],
-    ['End Date', formatTimestamp(eventData.endDate)],
+    ['Event Date', formatTimestamp(eventData.eventDate || eventData.startDate)],
+    ['Registration Deadline', formatTimestamp(eventData.registrationDeadline || eventData.endDate)],
     ['Registration Fee', eventData.registrationFee > 0 ? `BDT ${eventData.registrationFee}` : 'Free'],
     ['Total Participants', String(totalParticipants)],
     ['Total Revenue', `BDT ${totalRevenue}`],
@@ -165,7 +165,7 @@ export const generateInvoicePDF = (event, participant) => {
   doc.setTextColor(50, 50, 50);
   const eventDetails = [
     ['Event', event.title],
-    ['Date', formatTimestamp(event.startDate)],
+    ['Date', formatTimestamp(event.eventDate || event.startDate)],
     ['Location', formatEventLocation(event.location) || '-'],
   ];
   eventDetails.forEach(([label, value]) => {

@@ -21,9 +21,9 @@ export default function CreateEvent() {
   const [isPublic, setIsPublic] = useState(true);
   const [isPaid, setIsPaid] = useState(false);
   const [selectedMethods, setSelectedMethods] = useState([PAYMENT_METHODS.BKASH]);
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [dateErrors, setDateErrors] = useState({ startDate: '', endDate: '' });
+  const [eventDate, setEventDate] = useState(null);
+  const [registrationDeadline, setRegistrationDeadline] = useState(null);
+  const [dateErrors, setDateErrors] = useState({ eventDate: '', registrationDeadline: '' });
   const [contactPersons, setContactPersons] = useState([{ name: '', phone: '' }]);
   const [contactErrors, setContactErrors] = useState([]);
   const fileInputRef = useRef(null);
@@ -82,15 +82,15 @@ export default function CreateEvent() {
   };
 
   const validateDates = () => {
-    const errs = { startDate: '', endDate: '' };
-    if (!startDate) {
-      errs.startDate = 'Start date is required';
+    const errs = { eventDate: '', registrationDeadline: '' };
+    if (!eventDate) {
+      errs.eventDate = 'Event date is required';
     }
-    if (endDate && startDate && endDate <= startDate) {
-      errs.endDate = 'End date must be after start date';
+    if (registrationDeadline && eventDate && registrationDeadline > eventDate) {
+      errs.registrationDeadline = 'Registration deadline must be before the event date';
     }
     setDateErrors(errs);
-    return !errs.startDate && !errs.endDate;
+    return !errs.eventDate && !errs.registrationDeadline;
   };
 
   const toggleMethod = (method) => {
@@ -118,8 +118,8 @@ export default function CreateEvent() {
           postCode: data.locationPostCode || '',
           country: data.locationCountry || 'Bangladesh',
         },
-        startDate,
-        endDate: endDate || null,
+        eventDate,
+        registrationDeadline: registrationDeadline || null,
         participantLimit: data.participantLimit ? parseInt(data.participantLimit) : null,
         registrationFee: isPaid ? parseFloat(data.registrationFee) : 0,
         paymentMethods: isPaid ? [...selectedMethods] : [],
@@ -251,19 +251,18 @@ export default function CreateEvent() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <DateTimePicker
-              label="Start Date & Time"
-              value={startDate}
-              onChange={setStartDate}
-              error={dateErrors.startDate}
+              label="Event Date & Time"
+              value={eventDate}
+              onChange={setEventDate}
+              error={dateErrors.eventDate}
               required
               minDate="today"
             />
             <DateTimePicker
-              label="End Date & Time"
-              value={endDate}
-              onChange={setEndDate}
-              error={dateErrors.endDate}
-              minDate={startDate}
+              label="Registration Deadline (Optional)"
+              value={registrationDeadline}
+              onChange={setRegistrationDeadline}
+              error={dateErrors.registrationDeadline}
             />
           </div>
         </Card>
