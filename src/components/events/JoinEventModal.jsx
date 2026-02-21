@@ -126,8 +126,7 @@ export default function JoinEventModal({
                   Registration Fee: {formatCurrency(event.registrationFee)}
                 </p>
                 <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  Please send the payment to the following {getPaymentMethodLabel(chosenMethod)} number and enter
-                  your transaction ID below.
+                  Please send the payment to the following {getPaymentMethodLabel(chosenMethod)} number and enter your transaction ID &amp; Sender number below.
                 </p>
               </div>
 

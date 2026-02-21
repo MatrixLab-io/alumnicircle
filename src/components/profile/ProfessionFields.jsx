@@ -25,6 +25,7 @@ export default function ProfessionFields({ register, watch, errors, setValue }) 
       setValue('profession.businessName', '');
       setValue('profession.designation', '');
       setValue('profession.companyName', '');
+      setValue('profession.companyWebsite', '');
     }
   }, [professionType, setValue]);
 
@@ -39,12 +40,21 @@ export default function ProfessionFields({ register, watch, errors, setValue }) 
       />
 
       {professionType === PROFESSION_TYPES.BUSINESS && (
-        <Input
-          label="Business Name"
-          placeholder="Enter your business name"
-          error={errors?.profession?.businessName?.message}
-          {...register('profession.businessName')}
-        />
+        <>
+          <Input
+            label="Business Name"
+            placeholder="Enter your business name"
+            error={errors?.profession?.businessName?.message}
+            {...register('profession.businessName')}
+          />
+          <Input
+            label="Business Website"
+            placeholder="https://yourbusiness.com"
+            helperText="Optional — business name will link to this"
+            error={errors?.profession?.companyWebsite?.message}
+            {...register('profession.companyWebsite')}
+          />
+        </>
       )}
 
       {professionType === PROFESSION_TYPES.SERVICE && (
@@ -60,6 +70,13 @@ export default function ProfessionFields({ register, watch, errors, setValue }) 
             placeholder="Enter company name"
             error={errors?.profession?.companyName?.message}
             {...register('profession.companyName')}
+          />
+          <Input
+            label="Company Website"
+            placeholder="https://company.com"
+            helperText="Optional — company name will link to this"
+            error={errors?.profession?.companyWebsite?.message}
+            {...register('profession.companyWebsite')}
           />
         </>
       )}

@@ -6,7 +6,7 @@ import { PhotoIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
-import { Card, Button, Input, Textarea, Select, Toggle, Spinner, DateTimePicker } from '../../components/common';
+import { Card, Button, Input, Textarea, Select, Toggle, Spinner, DateTimePicker, PhoneInput } from '../../components/common';
 import { createEvent, uploadEventBanner, updateEvent } from '../../services/event.service';
 import { validationRules, isValidPhone } from '../../utils/validators';
 import { ADMIN_ROUTES } from '../../config/routes';
@@ -74,7 +74,7 @@ export default function CreateEvent() {
 
   const validateContactPersons = () => {
     const errs = contactPersons.map((cp) => {
-      if (cp.phone && !isValidPhone(cp.phone)) return 'Invalid BD phone number';
+      if (cp.phone && !isValidPhone(cp.phone)) return 'Invalid phone number';
       if (cp.name && !cp.phone) return 'Phone is required';
       if (cp.phone && !cp.name) return 'Name is required';
       return '';
@@ -89,7 +89,7 @@ export default function CreateEvent() {
       errs.eventDate = 'Event date is required';
     }
     if (registrationDeadline && eventDate && registrationDeadline > eventDate) {
-      errs.registrationDeadline = 'Registration deadline must be before the event date';
+      errs.registrationDeadline = 'Registration deadline must be on or before the event date';
     }
     setDateErrors(errs);
     return !errs.eventDate && !errs.registrationDeadline;
@@ -324,6 +324,7 @@ export default function CreateEvent() {
               value={registrationDeadline}
               onChange={setRegistrationDeadline}
               error={dateErrors.registrationDeadline}
+              maxDate={eventDate || undefined}
             />
           </div>
         </Card>
@@ -486,7 +487,7 @@ export default function CreateEvent() {
           <div className="space-y-3">
             {contactPersons.map((cp, index) => (
               <div key={index}>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3">
                   <div className="flex-1">
                     <input
                       type="text"
@@ -497,12 +498,12 @@ export default function CreateEvent() {
                     />
                   </div>
                   <div className="flex-1">
-                    <input
-                      type="tel"
-                      placeholder="Phone (01XXXXXXXXX)"
+                    <PhoneInput
                       value={cp.phone}
-                      onChange={(e) => updateContactPerson(index, 'phone', e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border ${contactErrors[index] ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent`}
+                      onChange={(value) => updateContactPerson(index, 'phone', value || '')}
+                      defaultCountry="BD"
+                      placeholder="Phone number"
+                      error={contactErrors[index]}
                     />
                   </div>
                   {contactPersons.length > 1 && (
@@ -515,9 +516,6 @@ export default function CreateEvent() {
                     </button>
                   )}
                 </div>
-                {contactErrors[index] && (
-                  <p className="mt-1 text-xs text-red-500">{contactErrors[index]}</p>
-                )}
               </div>
             ))}
           </div>

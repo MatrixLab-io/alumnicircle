@@ -11,6 +11,7 @@ export default function DateTimePicker({
   required = false,
   placeholder = 'Select date & time',
   minDate = null,
+  maxDate = null,
   className,
 }) {
   const inputRef = useRef(null);
@@ -25,6 +26,7 @@ export default function DateTimePicker({
       time_24hr: false,
       defaultDate: value || null,
       minDate: minDate || undefined,
+      maxDate: maxDate || undefined,
       disableMobile: true,
       onChange: ([date]) => {
         if (onChange) onChange(date || null);
@@ -36,12 +38,18 @@ export default function DateTimePicker({
     };
   }, []);
 
-  // Update minDate dynamically
+  // Update minDate/maxDate dynamically
   useEffect(() => {
     if (fpRef.current && minDate) {
       fpRef.current.set('minDate', minDate);
     }
   }, [minDate]);
+
+  useEffect(() => {
+    if (fpRef.current) {
+      fpRef.current.set('maxDate', maxDate || undefined);
+    }
+  }, [maxDate]);
 
   // Sync external value changes
   useEffect(() => {

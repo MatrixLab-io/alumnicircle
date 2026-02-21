@@ -56,6 +56,7 @@ export default function EditProfile() {
         businessName: userProfile?.profession?.businessName || '',
         designation: userProfile?.profession?.designation || '',
         companyName: userProfile?.profession?.companyName || '',
+        companyWebsite: userProfile?.profession?.companyWebsite || '',
         otherDetails: userProfile?.profession?.otherDetails || '',
       },
       address: {
@@ -114,6 +115,7 @@ export default function EditProfile() {
             businessName: data.profession.type === 'business' ? data.profession.businessName : null,
             designation: data.profession.type === 'service' ? data.profession.designation : null,
             companyName: data.profession.type === 'service' ? data.profession.companyName : null,
+            companyWebsite: ['business', 'service'].includes(data.profession.type) ? (data.profession.companyWebsite || null) : null,
             otherDetails: data.profession.type === 'other' ? data.profession.otherDetails : null,
           }
         : null;

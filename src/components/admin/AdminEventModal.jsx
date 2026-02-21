@@ -205,69 +205,71 @@ export default function AdminEventModal({
       </Modal.Body>
 
       {/* Action footer */}
-      <Modal.Footer className="flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={onClose} className="mr-auto">
+      <Modal.Footer className="flex items-center justify-between gap-2 flex-wrap">
+        <Button variant="outline" size="sm" onClick={onClose}>
           Close
         </Button>
 
-        {/* Delete — always available */}
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => onDelete(event.id)}
-          isLoading={isProcessing}
-          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-          leftIcon={<TrashIcon className="h-4 w-4" />}
-        >
-          Delete
-        </Button>
-
-        {/* Edit — always available */}
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onEdit(event.id)}
-          leftIcon={<PencilSquareIcon className="h-4 w-4" />}
-        >
-          Edit
-        </Button>
-
-        {/* Archive — published events only */}
-        {!isDraft && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Delete — always available */}
           <Button
             size="sm"
             variant="outline"
-            onClick={() => onArchive(event.id)}
+            onClick={() => onDelete(event.id)}
             isLoading={isProcessing}
-            leftIcon={<ArchiveBoxIcon className="h-4 w-4" />}
+            className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/20"
+            leftIcon={<TrashIcon className="h-4 w-4" />}
           >
-            Archive
+            Delete
           </Button>
-        )}
 
-        {/* Participants — published events only */}
-        {!isDraft && (
+          {/* Edit — always available */}
           <Button
             size="sm"
             variant="outline"
-            onClick={() => onParticipants(event.id)}
-            leftIcon={<UsersIcon className="h-4 w-4" />}
+            onClick={() => onEdit(event.id)}
+            leftIcon={<PencilSquareIcon className="h-4 w-4" />}
           >
-            Participants
+            Edit
           </Button>
-        )}
 
-        {/* Publish — draft only */}
-        {isDraft && (
-          <Button
-            size="sm"
-            onClick={() => onPublish(event.id)}
-            isLoading={isProcessing}
-            leftIcon={<CheckCircleIcon className="h-4 w-4" />}
-          >
-            Publish
-          </Button>
-        )}
+          {/* Archive — published events only */}
+          {!isDraft && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onArchive(event.id)}
+              isLoading={isProcessing}
+              leftIcon={<ArchiveBoxIcon className="h-4 w-4" />}
+            >
+              Archive
+            </Button>
+          )}
+
+          {/* Participants — published events only */}
+          {!isDraft && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onParticipants(event.id)}
+              leftIcon={<UsersIcon className="h-4 w-4" />}
+            >
+              Participants
+            </Button>
+          )}
+
+          {/* Publish — draft only */}
+          {isDraft && (
+            <Button
+              size="sm"
+              onClick={() => onPublish(event.id)}
+              isLoading={isProcessing}
+              leftIcon={<CheckCircleIcon className="h-4 w-4" />}
+            >
+              Publish
+            </Button>
+          )}
+        </div>
       </Modal.Footer>
     </Modal>
   );

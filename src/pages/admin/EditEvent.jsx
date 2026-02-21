@@ -6,11 +6,18 @@ import { PhotoIcon, PlusIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
-import { Card, Button, Input, Textarea, Select, Toggle, Spinner, DateTimePicker } from '../../components/common';
+import { Card, Button, Input, Textarea, Select, Toggle, Spinner, DateTimePicker, PhoneInput } from '../../components/common';
 import { getEventById, updateEvent, uploadEventBanner } from '../../services/event.service';
 import { validationRules, isValidPhone } from '../../utils/validators';
 import { ADMIN_ROUTES } from '../../config/routes';
 import { APP_NAME, EVENT_STATUS, PAYMENT_METHODS } from '../../config/constants';
+
+const normalizePhone = (phone) => {
+  if (!phone) return '';
+  if (phone.startsWith('+')) return phone;
+  if (/^01[3-9]\d{8}$/.test(phone)) return `+880${phone.substring(1)}`;
+  return phone;
+};
 
 const toDate = (val) => {
   if (!val) return null;
@@ -102,7 +109,10 @@ export default function EditEvent() {
       setEventStatus(event.status || EVENT_STATUS.UPCOMING);
       if (event.banner) setBannerPreview(event.banner);
       if (event.contactPersons?.length > 0) {
-        setContactPersons(event.contactPersons);
+        setContactPersons(event.contactPersons.map((cp) => ({
+          ...cp,
+          phone: normalizePhone(cp.phone || ''),
+        })));
       }
     } catch (error) {
       toast.error('Failed to load event');
@@ -136,7 +146,7 @@ export default function EditEvent() {
 
   const validateContactPersons = () => {
     const errs = contactPersons.map((cp) => {
-      if (cp.phone && !isValidPhone(cp.phone)) return 'Invalid BD phone number';
+      if (cp.phone && !isValidPhone(cp.phone)) return 'Invalid phone number';
       if (cp.name && !cp.phone) return 'Phone is required';
       if (cp.phone && !cp.name) return 'Name is required';
       return '';
@@ -151,7 +161,7 @@ export default function EditEvent() {
       errs.eventDate = 'Event date is required';
     }
     if (registrationDeadline && eventDate && registrationDeadline > eventDate) {
-      errs.registrationDeadline = 'Registration deadline must be before the event date';
+      errs.registrationDeadline = 'Registration deadline must be on or before the event date';
     }
     setDateErrors(errs);
     return !errs.eventDate && !errs.registrationDeadline;
@@ -352,6 +362,7 @@ export default function EditEvent() {
               value={registrationDeadline}
               onChange={setRegistrationDeadline}
               error={dateErrors.registrationDeadline}
+              maxDate={eventDate || undefined}
             />
           </div>
         </Card>
@@ -537,7 +548,7 @@ export default function EditEvent() {
           <div className="space-y-3">
             {contactPersons.map((cp, index) => (
               <div key={index}>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3">
                   <div className="flex-1">
                     <input
                       type="text"
@@ -548,27 +559,24 @@ export default function EditEvent() {
                     />
                   </div>
                   <div className="flex-1">
-                    <input
-                      type="tel"
-                      placeholder="Phone (01XXXXXXXXX)"
+                    <PhoneInput
                       value={cp.phone}
-                      onChange={(e) => updateContactPerson(index, 'phone', e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border ${contactErrors[index] ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent`}
+                      onChange={(value) => updateContactPerson(index, 'phone', value || '')}
+                      defaultCountry="BD"
+                      placeholder="Phone number"
+                      error={contactErrors[index]}
                     />
                   </div>
                   {contactPersons.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeContactPerson(index)}
-                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
+                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer self-start sm:mt-0"
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>
                   )}
                 </div>
-                {contactErrors[index] && (
-                  <p className="mt-1 text-xs text-red-500">{contactErrors[index]}</p>
-                )}
               </div>
             ))}
           </div>

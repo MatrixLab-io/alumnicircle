@@ -265,7 +265,7 @@ export default function ManageEvents() {
                 </div>
 
                 {/* Right: actions */}
-                <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2 flex-shrink-0 self-end lg:self-auto" onClick={(e) => e.stopPropagation()}>
                   {event.status === EVENT_STATUS.DRAFT ? (
                     <Button
                       size="sm"

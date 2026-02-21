@@ -9,6 +9,34 @@ import { Modal, Avatar, Badge, Button } from '../common';
 import { formatProfession, formatAddress } from '../../utils/formatters';
 import { VISIBILITY } from '../../config/constants';
 
+function ProfessionDisplay({ profession, className = '' }) {
+  const website = profession.companyWebsite;
+  const label = formatProfession(profession);
+  if (!website) return <span className={className}>{label}</span>;
+
+  const namePart = profession.type === 'business'
+    ? profession.businessName
+    : profession.companyName;
+
+  if (!namePart) return <span className={className}>{label}</span>;
+
+  const [before, after] = label.split(namePart);
+  return (
+    <span className={className}>
+      {before}
+      <a
+        href={website.startsWith('http') ? website : `https://${website}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary-600 hover:text-primary-700 dark:text-primary-400 hover:underline"
+      >
+        {namePart}
+      </a>
+      {after}
+    </span>
+  );
+}
+
 export default function MemberModal({ member, isOpen, onClose, isAdmin = false }) {
   if (!member) return null;
 
@@ -30,7 +58,7 @@ export default function MemberModal({ member, isOpen, onClose, isAdmin = false }
           </h2>
           {member.profession && (
             <p className="text-gray-600 dark:text-gray-400">
-              {formatProfession(member.profession)}
+              <ProfessionDisplay profession={member.profession} />
             </p>
           )}
 
@@ -105,7 +133,7 @@ export default function MemberModal({ member, isOpen, onClose, isAdmin = false }
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Profession</p>
                 <p className="text-sm text-gray-900 dark:text-white">
-                  {formatProfession(member.profession)}
+                  <ProfessionDisplay profession={member.profession} />
                 </p>
               </div>
             </div>

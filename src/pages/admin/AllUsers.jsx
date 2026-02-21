@@ -364,7 +364,7 @@ export default function AllUsers() {
                         <div className="text-sm text-gray-500 dark:text-gray-400">{user.phone}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           <AuthProviderBadge provider={user.authProvider} />
                           {user.authProvider === 'email' && !user.emailVerified && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">

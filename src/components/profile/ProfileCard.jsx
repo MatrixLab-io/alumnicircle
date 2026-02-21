@@ -12,6 +12,36 @@ import { formatProfession, formatAddress } from '../../utils/formatters';
 import { USER_ROUTES } from '../../config/routes';
 import { VISIBILITY } from '../../config/constants';
 
+function ProfessionDisplay({ profession }) {
+  const website = profession.companyWebsite;
+  const label = formatProfession(profession);
+
+  if (!website) return <span>{label}</span>;
+
+  // Find the company/business name portion and make it a link
+  const namePart = profession.type === 'business'
+    ? profession.businessName
+    : profession.companyName;
+
+  if (!namePart) return <span>{label}</span>;
+
+  const [before, after] = label.split(namePart);
+  return (
+    <span>
+      {before}
+      <a
+        href={website.startsWith('http') ? website : `https://${website}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary-600 hover:text-primary-700 dark:text-primary-400 hover:underline"
+      >
+        {namePart}
+      </a>
+      {after}
+    </span>
+  );
+}
+
 export default function ProfileCard({ user, isOwnProfile = false, isAdmin = false }) {
   const showEmail = isOwnProfile || isAdmin || user.emailVisibility === VISIBILITY.PUBLIC;
   const showPhone = isOwnProfile || isAdmin || user.phoneVisibility === VISIBILITY.PUBLIC;
@@ -98,8 +128,8 @@ export default function ProfileCard({ user, isOwnProfile = false, isAdmin = fals
 
           {user.profession && (
             <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
-              <BriefcaseIcon className="h-5 w-5" />
-              <span>{formatProfession(user.profession)}</span>
+              <BriefcaseIcon className="h-5 w-5 flex-shrink-0" />
+              <ProfessionDisplay profession={user.profession} />
             </div>
           )}
         </div>
