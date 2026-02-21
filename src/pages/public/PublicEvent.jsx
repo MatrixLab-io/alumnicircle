@@ -202,7 +202,7 @@ export default function PublicEvent() {
                     </p>
                     {(event.registrationDeadline || event.endDate) && (
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Registration deadline: {formatDate(event.registrationDeadline || event.endDate)}
+                        Registration deadline: {formatDateTime(event.registrationDeadline || event.endDate)}
                       </p>
                     )}
                   </div>
