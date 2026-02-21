@@ -101,13 +101,15 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        setUser(firebaseUser);
+        // Fetch profile first, then set user — both updates land in the same
+        // React 18 batch so ProtectedRoute never sees user=set but userProfile=null
         const profile = await fetchUserProfile(firebaseUser.uid);
         // Sync emailVerified to Firestore if Firebase Auth says verified but Firestore doesn't
         if (profile && firebaseUser.emailVerified && !profile.emailVerified) {
           await updateDoc(doc(db, COLLECTIONS.USERS, firebaseUser.uid), { emailVerified: true });
           setUserProfile((prev) => prev ? { ...prev, emailVerified: true } : prev);
         }
+        setUser(firebaseUser);
       } else {
         setUser(null);
         setUserProfile(null);
@@ -167,7 +169,7 @@ export function AuthProvider({ children }) {
           await updateDoc(doc(db, COLLECTIONS.USERS, emailProfile.uid), {
             lastLoginAt: serverTimestamp(),
           });
-          return { success: true, user: result.user, isNewUser: false };
+          return { success: true, user: result.user, isNewUser: false, profile: emailProfile };
         }
 
         // If coming from the registration page, create the profile
@@ -178,8 +180,8 @@ export function AuthProvider({ children }) {
             phone: additionalData.phone || '',
             authProvider: 'google',
           });
-          await fetchUserProfile(result.user.uid);
-          return { success: true, user: result.user, isNewUser: true };
+          const newProfile = await fetchUserProfile(result.user.uid);
+          return { success: true, user: result.user, isNewUser: true, profile: newProfile };
         }
 
         // No Firestore profile — could be new user or deleted user
@@ -204,7 +206,7 @@ export function AuthProvider({ children }) {
         });
       }
 
-      return { success: true, user: result.user, isNewUser: false };
+      return { success: true, user: result.user, isNewUser: false, profile: existingProfile };
     } catch (err) {
       logError('Google Sign-In', err);
       const errorMessage = getErrorMessage(err);

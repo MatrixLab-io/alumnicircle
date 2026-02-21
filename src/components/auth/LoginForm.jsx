@@ -14,7 +14,7 @@ import { PUBLIC_ROUTES, USER_ROUTES, ADMIN_ROUTES } from '../../config/routes';
 export default function LoginForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { loginWithEmail, signInWithGoogle, requestReapproval, userProfile, isEmailVerified } = useAuth();
+  const { loginWithEmail, signInWithGoogle, requestReapproval } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isReapproving, setIsReapproving] = useState(false);
@@ -39,8 +39,9 @@ export default function LoginForm() {
     formState: { errors },
   } = useForm();
 
-  const handleRedirect = (profile) => {
-    if (!isEmailVerified) {
+  // emailVerified comes directly from the Firebase user object — never from stale closure state
+  const handleRedirect = (profile, emailVerified) => {
+    if (!emailVerified) {
       navigate(PUBLIC_ROUTES.VERIFY_EMAIL);
       return;
     }
@@ -78,7 +79,7 @@ export default function LoginForm() {
 
     if (result.success) {
       toast.success('Welcome back!');
-      setTimeout(() => handleRedirect(result.profile), 500);
+      handleRedirect(result.profile, result.user.emailVerified);
     } else {
       toast.error(result.error || 'Login failed. Please check your credentials.');
     }
@@ -101,8 +102,7 @@ export default function LoginForm() {
         navigate(PUBLIC_ROUTES.PENDING_APPROVAL);
       } else {
         toast.success('Welcome back!');
-        // Use userProfile from context since Google sign-in sets it
-        setTimeout(() => handleRedirect(userProfile), 500);
+        handleRedirect(result.profile, result.user.emailVerified);
       }
     } else {
       toast.error(result.error || 'Google sign-in failed. Please try again.');

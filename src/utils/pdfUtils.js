@@ -114,164 +114,217 @@ export const generateEventPDF = (archivedEvent) => {
  */
 export const generateInvoicePDF = (event, participant) => {
   const doc = new jsPDF();
-  const purple = [107, 33, 168];
-  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageWidth  = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-  const formatTimestamp = (ts) => {
+  // ── Palette ──────────────────────────────────────────────
+  const purple      = [107, 33, 168];
+  const purpleLight = [245, 240, 255];
+  const purpleFade  = [180, 140, 230];
+  const dark        = [30,  30,  40];
+  const mid         = [90,  90, 100];
+  const light       = [160, 155, 175];
+  const green       = [22, 163,  74];
+  const greenLight  = [240, 253, 244];
+
+  const formatTs = (ts) => {
     if (!ts) return '-';
-    const date = ts.toDate ? ts.toDate() : new Date(ts);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  // ─── Header ────────────────────────────────────────────
-  doc.setFillColor(...purple);
-  doc.rect(0, 0, pageWidth, 40, 'F');
-
-  doc.setFontSize(22);
-  doc.setTextColor(255, 255, 255);
-  doc.text('AlumniCircle', 14, 18);
-
-  doc.setFontSize(10);
-  doc.setTextColor(220, 210, 255);
-  doc.text('Event Registration Invoice', 14, 28);
-
-  doc.setFontSize(28);
-  doc.setTextColor(255, 255, 255);
-  doc.text('INVOICE', pageWidth - 14, 24, { align: 'right' });
-
-  // ─── Invoice meta ──────────────────────────────────────
-  let y = 52;
-  doc.setFontSize(9);
-  doc.setTextColor(120, 120, 120);
-
-  const invoiceNum = `INV-${(participant.id || '').slice(-8).toUpperCase()}-${new Date().getFullYear()}`;
+  // Deterministic 4-digit number derived from participant ID — same invoice always gets same number
+  const _hash = (participant.id || Date.now().toString())
+    .split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
+  const invoiceSeq = String(Math.abs(_hash) % 9000 + 1000);
+  const invoiceNum  = `INV-ALMC-${invoiceSeq}`;
   const invoiceDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  const txId        = participant.transactionId || participant.bkashTransactionId || '-';
+  const senderNum   = participant.paymentSenderNumber || null;
+  const method      = participant.paymentMethod ? getPaymentMethodLabel(participant.paymentMethod) : '-';
+  const fee         = event.registrationFee || 0;
 
-  doc.text(`Invoice #: ${invoiceNum}`, 14, y);
-  doc.text(`Date: ${invoiceDate}`, pageWidth - 14, y, { align: 'right' });
-  y += 12;
+  // ── Header bar ───────────────────────────────────────────
+  doc.setFillColor(...purple);
+  doc.rect(0, 0, pageWidth, 38, 'F');
 
-  // ─── Event Details ─────────────────────────────────────
-  doc.setFontSize(12);
-  doc.setTextColor(...purple);
-  doc.text('Event Details', 14, y);
-  y += 2;
-  doc.setDrawColor(...purple);
+  // App name
+  doc.setFontSize(17);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.text('AlumniCircle', 14, 16);
+
+  // Tagline
+  doc.setFontSize(7.5);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(...purpleFade);
+  doc.text('School Batch 2003  |  alumnicircle.app', 14, 24);
+
+  // INVOICE (right)
+  doc.setFontSize(22);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.text('INVOICE', pageWidth - 14, 17, { align: 'right' });
+
+  // Invoice # and date (right, small)
+  doc.setFontSize(7.5);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(...purpleFade);
+  doc.text(`${invoiceNum}   ${invoiceDate}`, pageWidth - 14, 26, { align: 'right' });
+
+  // ── Two-column info boxes ─────────────────────────────────
+  const boxY  = 46;
+  const boxH  = 38;
+  const col1X = 14;
+  const col2X = 113;
+  const colW  = 89;
+  const bgCol = [249, 247, 253];
+
+  // Box 1 — Billed To
+  doc.setFillColor(...bgCol);
+  doc.setDrawColor(225, 215, 245);
   doc.setLineWidth(0.3);
-  doc.line(14, y, pageWidth - 14, y);
-  y += 8;
+  doc.roundedRect(col1X, boxY, colW, boxH, 3, 3, 'FD');
+
+  doc.setFontSize(6.5);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(...purpleFade);
+  doc.text('BILLED TO', col1X + 5, boxY + 8);
 
   doc.setFontSize(10);
-  doc.setTextColor(50, 50, 50);
-  const eventDetails = [
-    ['Event', event.title],
-    ['Date', formatTimestamp(event.eventDate || event.startDate)],
-    ['Location', formatEventLocation(event.location) || '-'],
-  ];
-  eventDetails.forEach(([label, value]) => {
-    doc.setFont(undefined, 'bold');
-    doc.text(`${label}:`, 14, y);
-    doc.setFont(undefined, 'normal');
-    doc.text(value || '-', 55, y);
-    y += 7;
-  });
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(...dark);
+  doc.text(participant.userName || '-', col1X + 5, boxY + 17);
 
-  y += 6;
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(...mid);
+  doc.text(participant.userEmail || '-', col1X + 5, boxY + 25, { maxWidth: colW - 10 });
+  doc.text(participant.userPhone  || '-', col1X + 5, boxY + 32);
 
-  // ─── Participant Details ───────────────────────────────
-  doc.setFontSize(12);
-  doc.setTextColor(...purple);
-  doc.text('Participant Details', 14, y);
-  y += 2;
-  doc.setDrawColor(...purple);
-  doc.line(14, y, pageWidth - 14, y);
-  y += 8;
+  // Box 2 — Event
+  doc.setFillColor(...bgCol);
+  doc.roundedRect(col2X, boxY, colW, boxH, 3, 3, 'FD');
 
-  doc.setFontSize(10);
-  doc.setTextColor(50, 50, 50);
-  const participantDetails = [
-    ['Name', participant.userName],
-    ['Email', participant.userEmail],
-    ['Phone', participant.userPhone],
-  ];
-  participantDetails.forEach(([label, value]) => {
-    doc.setFont(undefined, 'bold');
-    doc.text(`${label}:`, 14, y);
-    doc.setFont(undefined, 'normal');
-    doc.text(value || '-', 55, y);
-    y += 7;
-  });
+  doc.setFontSize(6.5);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(...purpleFade);
+  doc.text('EVENT', col2X + 5, boxY + 8);
 
-  y += 6;
+  doc.setFontSize(9.5);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(...dark);
+  doc.text(event.title || '-', col2X + 5, boxY + 17, { maxWidth: colW - 10 });
 
-  // ─── Payment Details ───────────────────────────────────
-  doc.setFontSize(12);
-  doc.setTextColor(...purple);
-  doc.text('Payment Details', 14, y);
-  y += 2;
-  doc.setDrawColor(...purple);
-  doc.line(14, y, pageWidth - 14, y);
-  y += 8;
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(...mid);
+  doc.text(formatTs(event.eventDate || event.startDate), col2X + 5, boxY + 26);
+  const loc = formatEventLocation(event.location) || '-';
+  doc.text(loc, col2X + 5, boxY + 33, { maxWidth: colW - 10 });
 
-  const txId = participant.transactionId || participant.bkashTransactionId || '-';
-  const methodLabel = participant.paymentMethod ? getPaymentMethodLabel(participant.paymentMethod) : '-';
+  // ── Line-item table ───────────────────────────────────────
+  const tableY = boxY + boxH + 10;
 
-  // Payment table
+  const txCell = senderNum ? `${txId}\nFrom: ${senderNum}` : txId;
+
   autoTable(doc, {
-    startY: y,
-    head: [['Description', 'Details']],
-    body: [
-      ['Payment Method', methodLabel],
-      ['Amount', `BDT ${event.registrationFee || 0}`],
-      ['Transaction ID', txId],
-      ['Status', 'APPROVED'],
-    ],
+    startY: tableY,
+    head: [['#', 'Description', 'Method', 'Transaction ID', 'Amount']],
+    body: [[
+      '1',
+      'Event Registration Fee',
+      method,
+      txCell,
+      `BDT ${fee}`,
+    ]],
     headStyles: {
       fillColor: purple,
-      fontSize: 10,
+      textColor: [255, 255, 255],
+      fontSize: 8.5,
+      fontStyle: 'bold',
+      cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
     },
     bodyStyles: {
-      fontSize: 10,
+      fontSize: 9,
+      textColor: dark,
+      cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
     },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 50 },
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 'auto' },
+      2: { cellWidth: 26, halign: 'center' },
+      3: { cellWidth: 42, fontStyle: 'normal' },
+      4: { cellWidth: 24, halign: 'right', fontStyle: 'bold' },
     },
-    alternateRowStyles: {
-      fillColor: [245, 240, 255],
-    },
+    alternateRowStyles: { fillColor: purpleLight },
     margin: { left: 14, right: 14 },
   });
 
-  y = doc.lastAutoTable.finalY + 16;
+  const afterTable = doc.lastAutoTable.finalY;
 
-  // ─── Total ─────────────────────────────────────────────
-  doc.setFillColor(245, 240, 255);
-  doc.roundedRect(pageWidth - 90, y - 4, 76, 18, 3, 3, 'F');
-  doc.setFontSize(12);
+  // ── Totals block (right-aligned) ─────────────────────────
+  const totW = 78;
+  const totX = pageWidth - 14 - totW;
+  const totY = afterTable + 10;
+
+  doc.setFillColor(...purpleLight);
+  doc.setDrawColor(210, 195, 240);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(totX, totY, totW, 28, 3, 3, 'FD');
+
+  // Subtotal row
+  doc.setFontSize(8.5);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(...mid);
+  doc.text('Subtotal', totX + 6, totY + 9);
+  doc.setTextColor(...dark);
+  doc.text(`BDT ${fee}`, totX + totW - 6, totY + 9, { align: 'right' });
+
+  // Divider
+  doc.setDrawColor(200, 185, 235);
+  doc.line(totX + 5, totY + 14, totX + totW - 5, totY + 14);
+
+  // Total row
+  doc.setFontSize(10.5);
   doc.setFont(undefined, 'bold');
   doc.setTextColor(...purple);
-  doc.text(`Total: BDT ${event.registrationFee || 0}`, pageWidth - 14, y + 8, { align: 'right' });
+  doc.text('Total', totX + 6, totY + 23);
+  doc.text(`BDT ${fee}`, totX + totW - 6, totY + 23, { align: 'right' });
 
-  y += 30;
+  // ── Status badge (left, same row as totals) ───────────────
+  doc.setFillColor(...greenLight);
+  doc.setDrawColor(187, 247, 208);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(14, totY + 4, 34, 12, 3, 3, 'FD');
+  doc.setFontSize(8.5);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(...green);
+  doc.text('PAID', 31, totY + 12, { align: 'center' });
 
-  // ─── Thank You ─────────────────────────────────────────
-  doc.setFontSize(11);
-  doc.setTextColor(100, 100, 100);
+  // ── Thank you note ────────────────────────────────────────
+  const noteY = totY + 46;
+  doc.setFontSize(9.5);
   doc.setFont(undefined, 'normal');
-  doc.text('Thank you for registering!', pageWidth / 2, y, { align: 'center' });
+  doc.setTextColor(...mid);
+  doc.text('Thank you for registering — we look forward to seeing you!', pageWidth / 2, noteY, { align: 'center' });
 
-  // ─── Footer ────────────────────────────────────────────
-  const pageHeight = doc.internal.pageSize.getHeight();
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
+  // ── Footer ────────────────────────────────────────────────
+  doc.setDrawColor(220, 210, 240);
+  doc.setLineWidth(0.3);
+  doc.line(14, pageHeight - 18, pageWidth - 14, pageHeight - 18);
+
+  doc.setFontSize(7.5);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(...light);
   doc.text(
-    `AlumniCircle — Generated on ${invoiceDate}`,
+    `AlumniCircle  ·  alumnicircle.app  ·  Generated ${invoiceDate}`,
     pageWidth / 2,
-    pageHeight - 10,
+    pageHeight - 11,
     { align: 'center' }
   );
 
-  const safeName = (participant.userName || 'User').replace(/[^a-zA-Z0-9]/g, '_');
-  const safeTitle = (event.title || 'Event').replace(/[^a-zA-Z0-9]/g, '_');
+  const safeName  = (participant.userName || 'User').replace(/[^a-zA-Z0-9]/g, '_');
+  const safeTitle = (event.title        || 'Event').replace(/[^a-zA-Z0-9]/g, '_');
   doc.save(`Invoice_${safeTitle}_${safeName}.pdf`);
 };
