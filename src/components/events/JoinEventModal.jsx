@@ -121,14 +121,30 @@ export default function JoinEventModal({
           {/* MFS (bKash/Nagad) flow */}
           {isPaid && needsTxId ? (
             <div className="space-y-4">
-              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                  Registration Fee: {formatCurrency(event.registrationFee)}
-                </p>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  Please send the payment to the following {getPaymentMethodLabel(chosenMethod)} number and enter your transaction ID &amp; Sender number below.
-                </p>
-              </div>
+              {(() => {
+                const fee = event.registrationFee;
+                const charge = Math.ceil(fee * 0.0185);
+                const total = fee + charge;
+                return (
+                  <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg space-y-2">
+                    <div className="flex justify-between text-sm text-yellow-800 dark:text-yellow-200">
+                      <span>Registration Fee</span>
+                      <span className="font-medium">{formatCurrency(fee)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-yellow-700 dark:text-yellow-300">
+                      <span>Cashout Charge (1.85%)</span>
+                      <span>+ {formatCurrency(charge)}</span>
+                    </div>
+                    <div className="flex justify-between text-base font-bold text-yellow-900 dark:text-yellow-100 border-t border-yellow-200 dark:border-yellow-700 pt-2">
+                      <span>Total to Send</span>
+                      <span>{formatCurrency(total)}</span>
+                    </div>
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300 pt-1">
+                      Please send exactly <strong>{formatCurrency(total)}</strong> to the {getPaymentMethodLabel(chosenMethod)} number below, then enter your transaction ID &amp; sender number.
+                    </p>
+                  </div>
+                );
+              })()}
 
               <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg text-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
