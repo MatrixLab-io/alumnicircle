@@ -48,9 +48,15 @@ service cloud.firestore {
     }
 
     // ── Events collection ─────────────────────────────────────────
+    // Approved members may increment currentParticipants when joining;
+    // all other writes (create, delete, field changes) require admin.
     match /events/{eventId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (isApproved() &&
+            request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['currentParticipants']));
     }
 
     // ── Event participants ────────────────────────────────────────
