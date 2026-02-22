@@ -9,6 +9,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   serverTimestamp,
   increment,
   writeBatch,
@@ -236,6 +237,22 @@ export const joinEvent = async (eventId, userId, userData, paymentInfo = {}) => 
   });
 
   return { id: docRef.id, success: true };
+};
+
+/**
+ * Get a single user's participation record for an event (member-safe query)
+ */
+export const getUserParticipation = async (eventId, userId) => {
+  if (!eventId || !userId) return null;
+  const q = query(
+    collection(db, COLLECTIONS.EVENT_PARTICIPANTS),
+    where('eventId', '==', eventId),
+    where('userId', '==', userId),
+    limit(1)
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
 };
 
 /**

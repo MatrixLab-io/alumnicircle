@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
 import { Button, Spinner, Card, Badge } from '../../components/common';
 import { EventDetails, JoinEventModal } from '../../components/events';
-import { getEventById, joinEvent, getEventParticipants } from '../../services/event.service';
+import { getEventById, joinEvent, getUserParticipation } from '../../services/event.service';
 import { getEventLiveStatus, getEventPaymentMethods, getPaymentMethodLabel } from '../../utils/helpers';
 import { USER_ROUTES } from '../../config/routes';
 import { APP_NAME, PARTICIPANT_STATUS, PAYMENT_METHODS } from '../../config/constants';
@@ -38,9 +38,8 @@ export default function EventDetailsPage() {
       }
       setEvent(eventData);
 
-      // Check if user already joined
-      const participants = await getEventParticipants(id);
-      const userPart = participants.find((p) => p.userId === userProfile?.uid);
+      // Check if user already joined (constrained query — safe for non-admin members)
+      const userPart = await getUserParticipation(id, userProfile?.uid);
       setUserParticipation(userPart);
     } catch (error) {
       toast.error('Failed to load event');
