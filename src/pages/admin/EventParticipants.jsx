@@ -87,6 +87,9 @@ export default function EventParticipants() {
     try {
       await approveParticipant(participantId, { uid: userProfile.uid, name: userProfile.name, email: userProfile.email });
       toast.success('Participant approved');
+      // Re-fetch event to reflect updated currentParticipants count
+      const updatedEvent = await getEventById(id);
+      if (updatedEvent) setEvent(updatedEvent);
       setParticipants((prev) =>
         prev.map((p) =>
           p.id === participantId ? { ...p, status: PARTICIPANT_STATUS.APPROVED, paymentVerified: true } : p

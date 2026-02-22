@@ -231,10 +231,13 @@ export const joinEvent = async (eventId, userId, userData, paymentInfo = {}) => 
 
   const docRef = await addDoc(collection(db, COLLECTIONS.EVENT_PARTICIPANTS), participantData);
 
-  // Update participant count
-  await updateDoc(doc(db, COLLECTIONS.EVENTS, eventId), {
-    currentParticipants: increment(1),
-  });
+  // For free events the participant is immediately approved — increment count now.
+  // For paid events the count is incremented when the admin approves payment.
+  if (!paymentRequired) {
+    await updateDoc(doc(db, COLLECTIONS.EVENTS, eventId), {
+      currentParticipants: increment(1),
+    });
+  }
 
   return { id: docRef.id, success: true };
 };
@@ -297,6 +300,15 @@ export const approveParticipant = async (participantId, adminInfo = {}) => {
     approvedBy: adminUid,
   });
 
+  // Increment confirmed participant count.
+  // Free-event participants were already counted at join; paid-event
+  // participants are counted here when payment is confirmed.
+  if (participantData?.paymentRequired) {
+    await updateDoc(doc(db, COLLECTIONS.EVENTS, participantData.eventId), {
+      currentParticipants: increment(1),
+    });
+  }
+
   // Log activity (fire-and-forget)
   logActivity({
     type: ACTIVITY_TYPES.PARTICIPANT_APPROVED,
@@ -327,10 +339,15 @@ export const rejectParticipant = async (participantId, eventId, adminInfo = {}, 
     adminNotes: notes,
   });
 
-  // Decrement participant count
-  await updateDoc(doc(db, COLLECTIONS.EVENTS, eventId), {
-    currentParticipants: increment(-1),
-  });
+  // Decrement count only if the participant was already counted:
+  //   - free-event participants are counted at join (status was APPROVED)
+  //   - paid-event participants are counted at admin approval (status was APPROVED)
+  //   - paid pending participants were never counted → no decrement needed
+  if (participantData?.status === PARTICIPANT_STATUS.APPROVED) {
+    await updateDoc(doc(db, COLLECTIONS.EVENTS, eventId), {
+      currentParticipants: increment(-1),
+    });
+  }
 
   // Log activity (fire-and-forget)
   logActivity({
