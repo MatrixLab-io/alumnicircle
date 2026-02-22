@@ -106,7 +106,7 @@ export const getSuccessMessage = (action) => {
  * @param {Error} error - The error object
  */
 export const logError = (context, error) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.group(`🔴 Error: ${context}`);
     console.error('Error code:', error?.code);
     console.error('Error message:', error?.message);
