@@ -300,13 +300,13 @@ export const approveParticipant = async (participantId, adminInfo = {}) => {
     approvedBy: adminUid,
   });
 
-  // Increment confirmed participant count.
+  // Increment confirmed participant count (best-effort — does not block approval).
   // Free-event participants were already counted at join; paid-event
   // participants are counted here when payment is confirmed.
   if (participantData?.paymentRequired) {
-    await updateDoc(doc(db, COLLECTIONS.EVENTS, participantData.eventId), {
+    updateDoc(doc(db, COLLECTIONS.EVENTS, participantData.eventId), {
       currentParticipants: increment(1),
-    });
+    }).catch((err) => console.warn('approveParticipant: count increment failed', err));
   }
 
   // Log activity (fire-and-forget)
@@ -339,14 +339,14 @@ export const rejectParticipant = async (participantId, eventId, adminInfo = {}, 
     adminNotes: notes,
   });
 
-  // Decrement count only if the participant was already counted:
+  // Decrement count only if the participant was already counted (best-effort).
   //   - free-event participants are counted at join (status was APPROVED)
   //   - paid-event participants are counted at admin approval (status was APPROVED)
   //   - paid pending participants were never counted → no decrement needed
   if (participantData?.status === PARTICIPANT_STATUS.APPROVED) {
-    await updateDoc(doc(db, COLLECTIONS.EVENTS, eventId), {
+    updateDoc(doc(db, COLLECTIONS.EVENTS, eventId), {
       currentParticipants: increment(-1),
-    });
+    }).catch((err) => console.warn('rejectParticipant: count decrement failed', err));
   }
 
   // Log activity (fire-and-forget)
