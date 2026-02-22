@@ -27,12 +27,15 @@ service cloud.firestore {
     }
 
     // ── Users collection ──────────────────────────────────────────
-    // Read: only approved members or the owner themselves (rejected/pending
-    //       users should not browse the directory).
+    // get (single doc): only the owner, approved members, or admins.
+    // list (collection query): any authenticated user — required so that
+    //       the duplicate-email check during registration can query by email
+    //       before the new account is approved.
     // Update (owner): allowed but privileged fields are locked — prevents
     //       a user from escalating their own role or faking approval.
     match /users/{userId} {
-      allow read: if isOwner(userId) || isApproved() || isAdmin();
+      allow get: if isOwner(userId) || isApproved() || isAdmin();
+      allow list: if isAuthenticated();
       allow create: if isOwner(userId);
       allow update: if (isOwner(userId) &&
         !request.resource.data.diff(resource.data).affectedKeys()
