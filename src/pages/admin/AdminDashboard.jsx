@@ -33,8 +33,8 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      // Sync stale event statuses first, then fetch stats
-      await syncEventStatuses().catch(() => {});
+      // Sync stale event statuses in background — don't block dashboard load
+      syncEventStatuses().catch(() => {});
       const [users, events, pending, latest] = await Promise.all([
         getUserStats().catch(() => null),
         getEventStats().catch(() => null),
