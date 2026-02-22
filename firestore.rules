@@ -41,7 +41,10 @@ service cloud.firestore {
         !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(['role', 'status', 'approvedAt', 'approvedBy']))
         || isAdmin();
-      allow delete: if isSuperAdmin();
+      // Super admin can delete any user; regular admin can only delete
+      // pending applicants (i.e. reject them during the approval workflow).
+      allow delete: if isSuperAdmin() ||
+        (isAdmin() && resource.data.status == 'pending');
     }
 
     // ── Events collection ─────────────────────────────────────────
@@ -51,12 +54,17 @@ service cloud.firestore {
     }
 
     // ── Event participants ────────────────────────────────────────
-    // Read: only the participant themselves or an admin.
+    // get  — participant themselves or any admin (single-doc read).
+    // list — admins can query without restriction; regular users may only
+    //        run queries constrained by their own userId (Firestore enforces
+    //        this when the query has where('userId','==',uid)).
     // Prevents approved members from reading each other's bKash TxIDs
     // and sender phone numbers.
     match /eventParticipants/{participantId} {
-      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid)
+      allow get: if (isAuthenticated() && resource.data.userId == request.auth.uid)
         || isAdmin();
+      allow list: if isAdmin()
+        || (isAuthenticated() && resource.data.userId == request.auth.uid);
       allow create: if isApproved();
       allow update, delete: if isAdmin();
     }
