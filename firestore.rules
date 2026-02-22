@@ -2,7 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
+    // ── Helper functions ──────────────────────────────────────────
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -26,32 +26,52 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
     }
 
-    // Users collection
+    // ── Users collection ──────────────────────────────────────────
+    // Read: only approved members or the owner themselves (rejected/pending
+    //       users should not browse the directory).
+    // Update (owner): allowed but privileged fields are locked — prevents
+    //       a user from escalating their own role or faking approval.
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if isOwner(userId) || isApproved() || isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      allow update: if (isOwner(userId) &&
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['role', 'status', 'approvedAt', 'approvedBy']))
+        || isAdmin();
       allow delete: if isSuperAdmin();
     }
 
-    // Events collection
+    // ── Events collection ─────────────────────────────────────────
     match /events/{eventId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
-    // Event participants collection
+    // ── Event participants ────────────────────────────────────────
+    // Read: only the participant themselves or an admin.
+    // Prevents approved members from reading each other's bKash TxIDs
+    // and sender phone numbers.
     match /eventParticipants/{participantId} {
-      allow read: if isAuthenticated();
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid)
+        || isAdmin();
       allow create: if isApproved();
       allow update, delete: if isAdmin();
     }
 
-    // Archived events collection
+    // ── Archived events ───────────────────────────────────────────
     match /archivedEvents/{archiveId} {
       allow read: if isAdmin();
       allow create: if isAdmin();
       allow delete: if isSuperAdmin();
+    }
+
+    // ── Activity logs ─────────────────────────────────────────────
+    // Contains PII (admin emails, target user details). Admin-only.
+    // No updates or deletes — logs are append-only.
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
     }
   }
 }
