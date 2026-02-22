@@ -38,8 +38,8 @@ export function AuthProvider({ children }) {
       }
       return null;
     } catch (err) {
-      // Profile fetch failed silently
-      return null;
+      logError('fetchUserProfile', err);
+      return null; // caller handles null — ProtectedRoute will retry
     }
   };
 
