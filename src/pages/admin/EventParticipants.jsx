@@ -9,6 +9,7 @@ import {
   DocumentArrowDownIcon,
   UsersIcon,
   MagnifyingGlassIcon,
+  PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -19,6 +20,7 @@ import {
   getEventParticipants,
   approveParticipant,
   rejectParticipant,
+  updateParticipantPayment,
 } from '../../services/event.service';
 import { exportToExcel, formatParticipantsForExport } from '../../utils/exportUtils';
 import { formatDate } from '../../utils/helpers';
@@ -37,6 +39,9 @@ export default function EventParticipants() {
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [editingPaymentId, setEditingPaymentId] = useState(null);
+  const [editForm, setEditForm] = useState({ paymentMethod: '', transactionId: '', paymentSenderNumber: '' });
+  const [savingPayment, setSavingPayment] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -117,6 +122,41 @@ export default function EventParticipants() {
       toast.error('Failed to reject participant');
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const startEditPayment = (participant) => {
+    setEditingPaymentId(participant.id);
+    setEditForm({
+      paymentMethod: participant.paymentMethod || '',
+      transactionId: participant.transactionId || '',
+      paymentSenderNumber: participant.paymentSenderNumber || '',
+    });
+  };
+
+  const handleSavePayment = async (participantId) => {
+    setSavingPayment(true);
+    try {
+      await updateParticipantPayment(participantId, editForm);
+      toast.success('Payment info updated');
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.id === participantId
+            ? {
+                ...p,
+                paymentMethod: editForm.paymentMethod || null,
+                transactionId: editForm.transactionId || null,
+                paymentSenderNumber: editForm.paymentSenderNumber || null,
+                bkashTransactionId: editForm.paymentMethod === 'bkash' ? editForm.transactionId : null,
+              }
+            : p
+        )
+      );
+      setEditingPaymentId(null);
+    } catch (error) {
+      toast.error('Failed to update payment');
+    } finally {
+      setSavingPayment(false);
     }
   };
 
@@ -322,6 +362,56 @@ export default function EventParticipants() {
                       </p>
                     </div>
                   ) : <div />}
+                </div>
+              )}
+
+              {/* Edit payment button (paid events only) */}
+              {participant.paymentRequired && editingPaymentId !== participant.id && (
+                <button
+                  onClick={() => startEditPayment(participant)}
+                  className="mt-2 flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                >
+                  <PencilSquareIcon className="h-3.5 w-3.5" />
+                  Edit Payment Info
+                </button>
+              )}
+
+              {/* Inline edit payment form */}
+              {editingPaymentId === participant.id && (
+                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50 space-y-2">
+                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Update Payment</p>
+                  <select
+                    value={editForm.paymentMethod}
+                    onChange={(e) => setEditForm((f) => ({ ...f, paymentMethod: e.target.value, transactionId: '', paymentSenderNumber: '' }))}
+                    className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">Select payment method</option>
+                    <option value="bkash">bKash</option>
+                    <option value="nagad">Nagad</option>
+                    <option value="cash">Cash</option>
+                  </select>
+                  {editForm.paymentMethod && editForm.paymentMethod !== 'cash' && (
+                    <>
+                      <input
+                        type="text"
+                        placeholder="Transaction ID"
+                        value={editForm.transactionId}
+                        onChange={(e) => setEditForm((f) => ({ ...f, transactionId: e.target.value }))}
+                        className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Sender Number"
+                        value={editForm.paymentSenderNumber}
+                        onChange={(e) => setEditForm((f) => ({ ...f, paymentSenderNumber: e.target.value }))}
+                        className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" variant="outline" onClick={() => setEditingPaymentId(null)} className="flex-1">Cancel</Button>
+                    <Button size="sm" onClick={() => handleSavePayment(participant.id)} isLoading={savingPayment} disabled={!editForm.paymentMethod} className="flex-1">Save</Button>
+                  </div>
                 </div>
               )}
 

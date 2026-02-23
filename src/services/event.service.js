@@ -324,6 +324,22 @@ export const approveParticipant = async (participantId, adminInfo = {}) => {
 };
 
 /**
+ * Update participant payment details (admin only)
+ */
+export const updateParticipantPayment = async (participantId, paymentData) => {
+  const { paymentMethod, transactionId, paymentSenderNumber } = paymentData;
+
+  await updateDoc(doc(db, COLLECTIONS.EVENT_PARTICIPANTS, participantId), {
+    paymentMethod: paymentMethod || null,
+    transactionId: transactionId || null,
+    paymentSenderNumber: paymentSenderNumber || null,
+    bkashTransactionId: paymentMethod === 'bkash' ? (transactionId || null) : null,
+  });
+
+  return { success: true };
+};
+
+/**
  * Reject participant
  */
 export const rejectParticipant = async (participantId, eventId, adminInfo = {}, notes = null) => {
