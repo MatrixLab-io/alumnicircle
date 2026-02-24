@@ -139,8 +139,9 @@ export const generateInvoicePDF = (event, participant) => {
   const invoiceSeq = String(Math.abs(_hash) % 9000 + 1000);
   const invoiceNum  = `INV-ALMC-${invoiceSeq}`;
   const invoiceDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  const txId        = participant.transactionId || participant.bkashTransactionId || '-';
-  const senderNum   = participant.paymentSenderNumber || null;
+  const isCash      = participant.paymentMethod === 'cash';
+  const txId        = isCash ? (participant.cashGivenBy || '-') : (participant.transactionId || participant.bkashTransactionId || '-');
+  const senderNum   = isCash ? (participant.cashContactNumber || null) : (participant.paymentSenderNumber || null);
   const method      = participant.paymentMethod ? getPaymentMethodLabel(participant.paymentMethod) : '-';
   const fee         = event.registrationFee || 0;
 
@@ -226,11 +227,12 @@ export const generateInvoicePDF = (event, participant) => {
   // ── Line-item table ───────────────────────────────────────
   const tableY = boxY + boxH + 10;
 
-  const txCell = senderNum ? `${txId}\nFrom: ${senderNum}` : txId;
+  const txCell = senderNum ? `${txId}\n${isCash ? 'Contact' : 'From'}: ${senderNum}` : txId;
+  const txHeader = isCash ? 'Confirmed By' : 'Transaction ID';
 
   autoTable(doc, {
     startY: tableY,
-    head: [['#', 'Description', 'Method', 'Transaction ID', 'Amount']],
+    head: [['#', 'Description', 'Method', txHeader, 'Amount']],
     body: [[
       '1',
       'Event Registration Fee',

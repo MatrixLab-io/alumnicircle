@@ -16,6 +16,8 @@ export default function JoinEventModal({
   const methods = event ? getEventPaymentMethods(event) : [];
 
   const [chosenMethod, setChosenMethod] = useState(null);
+  const [cashGivenBy, setCashGivenBy] = useState('');
+  const [cashContactNumber, setCashContactNumber] = useState('');
 
   // Auto-select if only one method (or free event)
   useEffect(() => {
@@ -50,8 +52,12 @@ export default function JoinEventModal({
     const result = await onJoin({
       paymentMethod: chosenMethod || null,
       transactionId: null,
+      cashGivenBy: chosenMethod === PAYMENT_METHODS.CASH ? cashGivenBy : null,
+      cashContactNumber: chosenMethod === PAYMENT_METHODS.CASH ? cashContactNumber : null,
     });
     if (result) {
+      setCashGivenBy('');
+      setCashContactNumber('');
       setChosenMethod(methods.length === 1 ? methods[0] : null);
       onClose();
     }
@@ -104,7 +110,7 @@ export default function JoinEventModal({
                   <button
                     key={m}
                     type="button"
-                    onClick={() => { setChosenMethod(m); reset(); }}
+                    onClick={() => { setChosenMethod(m); reset(); setCashGivenBy(''); setCashContactNumber(''); }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                       chosenMethod === m
                         ? 'bg-primary-600 text-white'
@@ -188,21 +194,58 @@ export default function JoinEventModal({
               </div>
             </div>
           ) : isPaid && isCashChosen ? (
-            <div className="text-center py-4">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-                <svg className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-                </svg>
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+                  <svg className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Pay by Cash
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-2">
+                  Registration Fee: <strong>{formatCurrency(event.registrationFee)}</strong>
+                </p>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Pay by Cash
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-2">
-                Registration Fee: <strong>{formatCurrency(event.registrationFee)}</strong>
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                You will pay in cash at the event venue. Your registration will be pending until approved by an admin.
-              </p>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Confirmed By <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={cashGivenBy}
+                  onChange={(e) => setCashGivenBy(e.target.value)}
+                  placeholder="Name of the person who confirmed payment"
+                  className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+                {cashGivenBy.length > 0 && cashGivenBy.length < 2 && (
+                  <p className="mt-1 text-xs text-red-500">Name must be at least 2 characters</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Contact Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={cashContactNumber}
+                  onChange={(e) => setCashContactNumber(e.target.value)}
+                  placeholder="Their phone number"
+                  className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+                {cashContactNumber.length > 0 && cashContactNumber.length < 8 && (
+                  <p className="mt-1 text-xs text-red-500">Contact number must be at least 8 characters</p>
+                )}
+              </div>
+
+              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Your registration will be pending until an admin verifies your cash payment. You'll receive a notification once approved.
+                </p>
+              </div>
             </div>
           ) : isPaid && !chosenMethod && showMethodPicker ? (
             <div className="text-center py-4">
@@ -241,8 +284,12 @@ export default function JoinEventModal({
               Select a Method
             </Button>
           ) : (
-            <Button onClick={handleCashOrFreeJoin} isLoading={isLoading}>
-              {isCashChosen ? 'Register (Pay at Venue)' : 'Confirm Registration'}
+            <Button
+              onClick={handleCashOrFreeJoin}
+              isLoading={isLoading}
+              disabled={isCashChosen && (cashGivenBy.trim().length < 2 || cashContactNumber.trim().length < 8)}
+            >
+              {isCashChosen ? 'Confirm & Join' : 'Confirm Registration'}
             </Button>
           )}
         </Modal.Footer>

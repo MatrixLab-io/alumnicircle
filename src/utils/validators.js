@@ -164,6 +164,20 @@ export const validationRules = {
       message: 'Transaction ID must be at least 8 characters',
     },
   },
+  cashGivenBy: {
+    required: 'Name of the person who confirmed payment is required',
+    minLength: {
+      value: 2,
+      message: 'Name must be at least 2 characters',
+    },
+  },
+  cashContactNumber: {
+    required: 'Contact number is required',
+    minLength: {
+      value: 8,
+      message: 'Contact number must be at least 8 characters',
+    },
+  },
   url: {
     validate: (value) => !value || isValidUrl(value) || 'Please enter a valid URL',
   },

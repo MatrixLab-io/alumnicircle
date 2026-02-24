@@ -40,7 +40,7 @@ export default function EventParticipants() {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [editingPaymentId, setEditingPaymentId] = useState(null);
-  const [editForm, setEditForm] = useState({ paymentMethod: '', transactionId: '', paymentSenderNumber: '' });
+  const [editForm, setEditForm] = useState({ paymentMethod: '', transactionId: '', paymentSenderNumber: '', cashGivenBy: '', cashContactNumber: '' });
   const [savingPayment, setSavingPayment] = useState(false);
 
   useEffect(() => {
@@ -131,6 +131,8 @@ export default function EventParticipants() {
       paymentMethod: participant.paymentMethod || '',
       transactionId: participant.transactionId || '',
       paymentSenderNumber: participant.paymentSenderNumber || '',
+      cashGivenBy: participant.cashGivenBy || '',
+      cashContactNumber: participant.cashContactNumber || '',
     });
   };
 
@@ -148,6 +150,8 @@ export default function EventParticipants() {
                 transactionId: editForm.transactionId || null,
                 paymentSenderNumber: editForm.paymentSenderNumber || null,
                 bkashTransactionId: editForm.paymentMethod === 'bkash' ? editForm.transactionId : null,
+                cashGivenBy: editForm.paymentMethod === 'cash' ? (editForm.cashGivenBy || null) : null,
+                cashContactNumber: editForm.paymentMethod === 'cash' ? (editForm.cashContactNumber || null) : null,
               }
             : p
         )
@@ -175,7 +179,9 @@ export default function EventParticipants() {
         p.userEmail?.toLowerCase().includes(q) ||
         p.userPhone?.toLowerCase().includes(q) ||
         (p.transactionId || p.bkashTransactionId)?.toLowerCase().includes(q) ||
-        p.paymentSenderNumber?.toLowerCase().includes(q)
+        p.paymentSenderNumber?.toLowerCase().includes(q) ||
+        p.cashGivenBy?.toLowerCase().includes(q) ||
+        p.cashContactNumber?.toLowerCase().includes(q)
       );
     }
     return true;
@@ -345,7 +351,7 @@ export default function EventParticipants() {
                 </div>
               </div>
 
-              {/* Payment details: TxID + Sent From side by side */}
+              {/* Payment details: TxID + Sent From side by side (bKash/Nagad) */}
               {(participant.transactionId || participant.bkashTransactionId) && (
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
@@ -362,6 +368,24 @@ export default function EventParticipants() {
                       </p>
                     </div>
                   ) : <div />}
+                </div>
+              )}
+
+              {/* Payment details: Cash Given By + Contact Number (cash payments) */}
+              {participant.paymentMethod === 'cash' && (participant.cashGivenBy || participant.cashContactNumber) && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mb-0.5">Confirmed By</p>
+                    <p className="text-sm font-bold text-amber-900 dark:text-amber-100 select-all break-all">
+                      {participant.cashGivenBy || '-'}
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mb-0.5">Contact Number</p>
+                    <p className="font-mono text-sm font-bold text-blue-900 dark:text-blue-100 tracking-wider select-all">
+                      {participant.cashContactNumber || '-'}
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -382,7 +406,7 @@ export default function EventParticipants() {
                   <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Update Payment</p>
                   <select
                     value={editForm.paymentMethod}
-                    onChange={(e) => setEditForm((f) => ({ ...f, paymentMethod: e.target.value, transactionId: '', paymentSenderNumber: '' }))}
+                    onChange={(e) => setEditForm((f) => ({ ...f, paymentMethod: e.target.value, transactionId: '', paymentSenderNumber: '', cashGivenBy: '', cashContactNumber: '' }))}
                     className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">Select payment method</option>
@@ -404,6 +428,24 @@ export default function EventParticipants() {
                         placeholder="Sender Number"
                         value={editForm.paymentSenderNumber}
                         onChange={(e) => setEditForm((f) => ({ ...f, paymentSenderNumber: e.target.value }))}
+                        className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </>
+                  )}
+                  {editForm.paymentMethod === 'cash' && (
+                    <>
+                      <input
+                        type="text"
+                        placeholder="Confirmed By (name)"
+                        value={editForm.cashGivenBy}
+                        onChange={(e) => setEditForm((f) => ({ ...f, cashGivenBy: e.target.value }))}
+                        className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                      <input
+                        type="tel"
+                        placeholder="Contact Number"
+                        value={editForm.cashContactNumber}
+                        onChange={(e) => setEditForm((f) => ({ ...f, cashContactNumber: e.target.value }))}
                         className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                     </>

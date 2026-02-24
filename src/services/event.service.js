@@ -206,7 +206,7 @@ export const joinEvent = async (eventId, userId, userData, paymentInfo = {}) => 
   }
 
   const paymentRequired = event.registrationFee > 0;
-  const { paymentMethod = null, transactionId = null, paymentSenderNumber = null } = paymentInfo;
+  const { paymentMethod = null, transactionId = null, paymentSenderNumber = null, cashGivenBy = null, cashContactNumber = null } = paymentInfo;
 
   const participantData = {
     eventId,
@@ -220,6 +220,8 @@ export const joinEvent = async (eventId, userId, userData, paymentInfo = {}) => 
     transactionId: transactionId || null,
     paymentSenderNumber: paymentSenderNumber || null,
     bkashTransactionId: paymentMethod === 'bkash' ? transactionId : null,
+    cashGivenBy: paymentMethod === 'cash' ? (cashGivenBy || null) : null,
+    cashContactNumber: paymentMethod === 'cash' ? (cashContactNumber || null) : null,
     paymentVerified: !paymentRequired,
     paymentVerifiedAt: null,
     paymentVerifiedBy: null,
@@ -327,13 +329,15 @@ export const approveParticipant = async (participantId, adminInfo = {}) => {
  * Update participant payment details (admin only)
  */
 export const updateParticipantPayment = async (participantId, paymentData) => {
-  const { paymentMethod, transactionId, paymentSenderNumber } = paymentData;
+  const { paymentMethod, transactionId, paymentSenderNumber, cashGivenBy, cashContactNumber } = paymentData;
 
   await updateDoc(doc(db, COLLECTIONS.EVENT_PARTICIPANTS, participantId), {
     paymentMethod: paymentMethod || null,
     transactionId: transactionId || null,
     paymentSenderNumber: paymentSenderNumber || null,
     bkashTransactionId: paymentMethod === 'bkash' ? (transactionId || null) : null,
+    cashGivenBy: paymentMethod === 'cash' ? (cashGivenBy || null) : null,
+    cashContactNumber: paymentMethod === 'cash' ? (cashContactNumber || null) : null,
   });
 
   return { success: true };
