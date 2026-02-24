@@ -113,7 +113,7 @@ export default function EditProfile() {
         ? {
             type: data.profession.type,
             businessName: data.profession.type === 'business' ? data.profession.businessName : null,
-            designation: data.profession.type === 'service' ? data.profession.designation : null,
+            designation: ['business', 'service'].includes(data.profession.type) ? data.profession.designation : null,
             companyName: data.profession.type === 'service' ? data.profession.companyName : null,
             companyWebsite: ['business', 'service'].includes(data.profession.type) ? (data.profession.companyWebsite || null) : null,
             otherDetails: data.profession.type === 'other' ? data.profession.otherDetails : null,
