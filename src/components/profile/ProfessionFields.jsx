@@ -15,7 +15,6 @@ export default function ProfessionFields({ register, watch, errors, setValue }) 
   // Clear fields when profession type changes
   useEffect(() => {
     if (professionType === PROFESSION_TYPES.BUSINESS) {
-      setValue('profession.designation', '');
       setValue('profession.companyName', '');
       setValue('profession.otherDetails', '');
     } else if (professionType === PROFESSION_TYPES.SERVICE) {
@@ -46,6 +45,12 @@ export default function ProfessionFields({ register, watch, errors, setValue }) 
             placeholder="Enter your business name"
             error={errors?.profession?.businessName?.message}
             {...register('profession.businessName')}
+          />
+          <Input
+            label="Designation"
+            placeholder="e.g., CEO, Founder, Managing Director"
+            error={errors?.profession?.designation?.message}
+            {...register('profession.designation')}
           />
           <Input
             label="Business Website"

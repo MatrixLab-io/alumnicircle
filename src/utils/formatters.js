@@ -79,8 +79,12 @@ export const formatProfession = (profession) => {
   if (!profession || !profession.type) return 'Not specified';
 
   switch (profession.type) {
-    case 'business':
-      return profession.businessName || 'Business Owner';
+    case 'business': {
+      const bParts = [];
+      if (profession.designation) bParts.push(profession.designation);
+      if (profession.businessName) bParts.push(`at ${profession.businessName}`);
+      return bParts.length > 0 ? bParts.join(' ') : 'Business Owner';
+    }
     case 'service':
       const parts = [];
       if (profession.designation) parts.push(profession.designation);
