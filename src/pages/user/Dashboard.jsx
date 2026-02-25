@@ -239,30 +239,36 @@ export default function Dashboard() {
               {upcomingEvents.map((event) => (
                 <div
                   key={event.id}
-                  className="flex items-center gap-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-800"
+                  className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800"
                 >
-                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
-                    <CalendarIcon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                      <CalendarIcon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-medium text-gray-900 dark:text-white truncate">
+                        {event.title}
+                      </h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        {formatDate(event.eventDate || event.startDate)}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                        {formatEventLocation(event.location)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-grow min-w-0">
-                    <h4 className="font-medium text-gray-900 dark:text-white truncate">
-                      {event.title}
-                    </h4>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(event.eventDate || event.startDate)} - {formatEventLocation(event.location)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Badge variant={event.registrationFee > 0 ? 'yellow' : 'green'} size="sm">
-                      {event.registrationFee > 0 ? 'Paid' : 'Free'}
-                    </Badge>
-                    {registeredEventIds.has(event.id) ? (
-                      <Badge variant="green" size="sm">Registered</Badge>
-                    ) : (
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-700/50">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={event.registrationFee > 0 ? 'yellow' : 'green'} size="sm">
+                        {event.registrationFee > 0 ? 'Paid' : 'Free'}
+                      </Badge>
+                      {registeredEventIds.has(event.id) && (
+                        <Badge variant="green" size="sm">Registered</Badge>
+                      )}
+                    </div>
+                    {!registeredEventIds.has(event.id) && (
                       <Link to={getEventDetailsRoute(event.id)}>
-                        <Button size="sm">
-                          Register
-                        </Button>
+                        <Button size="sm">Register</Button>
                       </Link>
                     )}
                   </div>
