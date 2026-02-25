@@ -7,14 +7,17 @@ import {
   UserCircleIcon,
   ArrowRightIcon,
   ArrowPathIcon,
+  MapPinIcon,
+  CurrencyDollarIcon,
+  PhoneIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { PageHeader } from '../../components/layout';
-import { Card, Button, Badge, Spinner, Avatar } from '../../components/common';
+import { Card, Button, Badge, Spinner, Avatar, Modal } from '../../components/common';
 import { getUserStats } from '../../services/user.service';
 import { getAllEvents, getUserEvents } from '../../services/event.service';
-import { formatDate, getEventLiveStatus } from '../../utils/helpers';
+import { formatDate, formatDateTime, formatCurrency, getEventLiveStatus, getEventPaymentMethods, getPaymentMethodLabel } from '../../utils/helpers';
 import { formatEventLocation } from '../../utils/formatters';
 import { USER_ROUTES, getEventDetailsRoute } from '../../config/routes';
 import { APP_NAME } from '../../config/constants';
@@ -26,6 +29,7 @@ export default function Dashboard() {
   const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -237,9 +241,11 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-4">
               {upcomingEvents.map((event) => (
-                <div
+                <button
                   key={event.id}
-                  className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800"
+                  type="button"
+                  onClick={() => setSelectedEvent(event)}
+                  className="w-full text-left p-4 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
@@ -266,18 +272,162 @@ export default function Dashboard() {
                         <Badge variant="green" size="sm">Registered</Badge>
                       )}
                     </div>
-                    {!registeredEventIds.has(event.id) && (
-                      <Link to={getEventDetailsRoute(event.id)}>
-                        <Button size="sm">Register</Button>
-                      </Link>
-                    )}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
         </Card>
       </div>
+
+      {/* Event Detail Modal */}
+      <Modal
+        isOpen={!!selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        title={selectedEvent?.title || 'Event Details'}
+        size="lg"
+      >
+        {selectedEvent && (() => {
+          const ev = selectedEvent;
+          const isFree = !ev.registrationFee || ev.registrationFee === 0;
+          const liveStatus = getEventLiveStatus(ev);
+          const isRegistered = registeredEventIds.has(ev.id);
+          const isFull = ev.participantLimit && ev.currentParticipants >= ev.participantLimit;
+          const spotsLeft = ev.participantLimit ? ev.participantLimit - (ev.currentParticipants || 0) : null;
+          const methods = getEventPaymentMethods(ev);
+
+          return (
+            <>
+              <Modal.Body>
+                {/* Banner */}
+                {ev.banner ? (
+                  <img src={ev.banner} alt={ev.title} className="w-full h-40 object-cover rounded-lg mb-4" />
+                ) : (
+                  <div className="w-full h-32 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg mb-4 flex items-center justify-center">
+                    <CalendarIcon className="h-14 w-14 text-white/50" />
+                  </div>
+                )}
+
+                {/* Status badges */}
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <Badge variant={liveStatus.variant} dot={liveStatus.dot}>{liveStatus.label}</Badge>
+                  <Badge variant={isFree ? 'green' : 'yellow'}>
+                    {isFree ? 'Free' : formatCurrency(ev.registrationFee)}
+                  </Badge>
+                  {isFull && <Badge variant="red">Full</Badge>}
+                  {isRegistered && <Badge variant="green">Registered</Badge>}
+                </div>
+
+                {/* Details */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                      <CalendarIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Date & Time</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {formatDateTime(ev.eventDate || ev.startDate)}
+                      </p>
+                      {(ev.registrationDeadline || ev.endDate) && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Deadline: {formatDate(ev.registrationDeadline || ev.endDate)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                      <MapPinIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Location</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {formatEventLocation(ev.location)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                      <UsersIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Participants</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {ev.currentParticipants || 0}
+                        {ev.participantLimit && <span className="text-gray-500 font-normal"> / {ev.participantLimit}</span>}
+                        {spotsLeft !== null && spotsLeft > 0 && (
+                          <span className="ml-2 text-xs text-green-600 dark:text-green-400">({spotsLeft} spots left)</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  {!isFree && (
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                        <CurrencyDollarIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Registration Fee</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(ev.registrationFee)}
+                        </p>
+                        {methods.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {methods.map((m) => (
+                              <span key={m} className="px-1.5 py-0.5 rounded text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                                {getPaymentMethodLabel(m)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                {ev.description && (
+                  <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">About</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                      {ev.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Contact Persons */}
+                {ev.contactPersons?.length > 0 && (
+                  <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Contact</h4>
+                    <div className="space-y-2">
+                      {ev.contactPersons.map((cp, i) => (
+                        <div key={i} className="flex items-center gap-2 text-sm">
+                          <PhoneIcon className="h-4 w-4 text-gray-400" />
+                          <span className="font-medium text-gray-900 dark:text-white">{cp.name}</span>
+                          <a href={`tel:${cp.phone}`} className="text-primary-600 dark:text-primary-400 hover:underline">{cp.phone}</a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Modal.Body>
+
+              <Modal.Footer>
+                <Button variant="outline" onClick={() => setSelectedEvent(null)}>Close</Button>
+                {!isRegistered && liveStatus.status !== 'ended' && !isFull && (
+                  <Link to={getEventDetailsRoute(ev.id)} onClick={() => setSelectedEvent(null)}>
+                    <Button>Register</Button>
+                  </Link>
+                )}
+              </Modal.Footer>
+            </>
+          );
+        })()}
+      </Modal>
     </>
   );
 }
